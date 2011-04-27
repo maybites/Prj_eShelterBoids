@@ -1,3 +1,29 @@
+/*
+ * eShelterBoids
+ *
+ * Copyright (C) 2011 Martin Fršhlich & Others
+ *
+ * Parts of the code used has been found on the internet:
+ 
+ * 3D Boids Simulation: Matt Wetmore (http://www.openprocessing.org/visuals/?visualID=6910)
+ *
+ * This class is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This class is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * {@link http://www.gnu.org/licenses/lgpl.html}
+ *
+ */
+
 package ch.maybites.prj.eShelter;
 
 import processing.core.*;
@@ -29,6 +55,7 @@ public class Boid {
 	float t = 0;
 	boolean avoidWalls = false;
 
+	//final String MODELNAME = "/model/singleE_lowPoly.obj";
 	final String MODELNAME = "/model/singleE_lowPolyVolume.obj";
 	// final String MODELNAME = "/model/weirdobject.obj";
 
@@ -98,6 +125,10 @@ public class Boid {
 
 	}
 
+	public void calcSector(float size){
+		
+	}
+	
 	void run(ArrayList<Boid> bl) {
 		t += .1;
 		flap = 10 * (float) Math.sin(t);
@@ -115,10 +146,7 @@ public class Boid {
 			acc.add(PVector
 					.mult(avoid(new PVector(pos.x, pos.y, 900), true), 5));
 		}
-		flock(bl);
-		move();
-		checkBounds();
-		positioning();
+		newFlock(bl);
 	}
 
 	void scatter() {
@@ -126,6 +154,13 @@ public class Boid {
 	}
 
 	// //------------------------------------
+
+	
+	void render(PApplet canvas) {
+		move();
+		checkBounds();
+		translation();
+	}
 
 	void move() {
 		vel.add(acc); // add acceleration to velocity
@@ -150,47 +185,15 @@ public class Boid {
 			pos.z = 900;
 	}
 
-	void positioning(){
+	void translation(){
 		myModel.mesh().transform().translation.x = pos.x - width;
 		myModel.mesh().transform().translation.y = pos.y - height;
 		myModel.mesh().transform().translation.z = pos.z;
-		
+
+		myModel.mesh().rotation().y = (float)Math.atan2(-vel.z,vel.x);
+		myModel.mesh().rotation().z = (float)Math.asin(vel.y/vel.mag());
+
 		myModel.mesh().scale(sc, sc, sc);
-	}
-	
-	void render(PApplet canvas) {
-
-		/**
-		canvas.pushMatrix();
-		canvas.translate(pos.x, pos.y, pos.z);
-		canvas.rotateY((float) Math.atan2(-vel.z, vel.x));
-		canvas.rotateZ((float) Math.asin(vel.y / vel.mag()));
-		canvas.stroke(h);
-		canvas.noFill();
-		canvas.noStroke();
-		canvas.fill(h);
-		// draw bird
-		canvas.beginShape(canvas.TRIANGLES);
-		canvas.vertex(3 * sc, 0, 0);
-		canvas.vertex(-3 * sc, 2 * sc, 0);
-		canvas.vertex(-3 * sc, -2 * sc, 0);
-
-		canvas.vertex(3 * sc, 0, 0);
-		canvas.vertex(-3 * sc, 2 * sc, 0);
-		canvas.vertex(-3 * sc, 0, 2 * sc);
-
-		canvas.vertex(3 * sc, 0, 0);
-		canvas.vertex(-3 * sc, 0, 2 * sc);
-		canvas.vertex(-3 * sc, -2 * sc, 0);
-
-
-		canvas.vertex(-3 * sc, 0, 2 * sc);
-		canvas.vertex(-3 * sc, 2 * sc, 0);
-		canvas.vertex(-3 * sc, -2 * sc, 0);
-		canvas.endShape();
-		// box(10);
-		canvas.popMatrix();
-		*/
 	}
 
 	// steering. If arrival==true, the boid slows to meet the target. Credit to
@@ -229,90 +232,47 @@ public class Boid {
 		return steer;
 	}
 
-	PVector seperation(ArrayList<Boid> boids) {
-		PVector posSum = new PVector(0, 0, 0);
-		PVector repulse;
-		for (int i = 0; i < boids.size(); i++) {
-			Boid b = (Boid) boids.get(i);
-			float d = PVector.dist(pos, b.pos);
-			if (d > 0 && d <= neighborhoodRadius) {
-				repulse = PVector.sub(pos, b.pos);
-				repulse.normalize();
-				repulse.div(d);
-				posSum.add(repulse);
-			}
-		}
-		return posSum;
-	}
-
-	PVector alignment(ArrayList<Boid> boids) {
-		PVector velSum = new PVector(0, 0, 0);
-		int count = 0;
-		for (int i = 0; i < boids.size(); i++) {
-			Boid b = (Boid) boids.get(i);
-			float d = PVector.dist(pos, b.pos);
-			if (d > 0 && d <= neighborhoodRadius) {
-				velSum.add(b.vel);
-				count++;
-			}
-		}
-		if (count > 0) {
-			velSum.div((float) count);
-			velSum.limit(maxSteerForce);
-		}
-		return velSum;
-	}
-
-	PVector cohesion(ArrayList<Boid> boids) {
-		PVector posSum = new PVector(0, 0, 0);
-		PVector steer = new PVector(0, 0, 0);
-		int count = 0;
-		for (int i = 0; i < boids.size(); i++) {
-			Boid b = (Boid) boids.get(i);
-			float d = Calc.dist(pos.x, pos.y, b.pos.x, b.pos.y);
-			if (d > 0 && d <= neighborhoodRadius) {
-				posSum.add(b.pos);
-				count++;
-			}
-		}
-		if (count > 0) {
-			posSum.div((float) count);
-		}
-		steer = PVector.sub(posSum, pos);
-		steer.limit(maxSteerForce);
-		return steer;
-	}
 	
 	void newFlock(ArrayList<Boid> boids) {
-		//ali = alignment(bl);
-		//coh = cohesion(bl);
-		//sep = seperation(bl);
-		PVector ali = new PVector(0, 0, 0);
+		PVector cohSum = new PVector(0, 0, 0);
+		PVector steer = new PVector(0, 0, 0);
+		PVector aliSum = new PVector(0, 0, 0);
+		PVector sepSum = new PVector(0, 0, 0);
+		PVector repulse;
 		int count = 0;
 		for (int i = 0; i < boids.size(); i++) {
 			Boid b = (Boid) boids.get(i);
 			
 			float d = PVector.dist(pos, b.pos);
 			if (d > 0 && d <= neighborhoodRadius) {
-				ali.add(b.vel);
+				//alignment
+				aliSum.add(b.vel);
+				
+				//cohesion
+				cohSum.add(b.pos);
+				
+				//separation
+				repulse = PVector.sub(pos, b.pos);
+				repulse.normalize();
+				repulse.div(d);
+				sepSum.add(repulse);
 				count++;
 			}
 		}
 		if (count > 0) {
-			ali.div((float) count);
-			ali.limit(maxSteerForce);
+			aliSum.div((float) count);
+			aliSum.limit(maxSteerForce);
+			cohSum.div((float) count);
 		}
+		steer = PVector.sub(cohSum, pos);
+		steer.limit(maxSteerForce);
+
 		
-	}
-	
-	// ///-----------behaviors---------------
-	void flock(ArrayList<Boid> bl) {
-		ali = alignment(bl);
-		coh = cohesion(bl);
-		sep = seperation(bl);
-		acc.add(PVector.mult(ali, 1));
-		acc.add(PVector.mult(coh, 3));
-		acc.add(PVector.mult(sep, 1));
+		acc.add(PVector.mult(aliSum, 1));
+		acc.add(PVector.mult(steer, 3));
+		acc.add(PVector.mult(sepSum, 1));
+		//acc.add(PVector.mult(sepSum, 1));
+		
 	}
 	
 
