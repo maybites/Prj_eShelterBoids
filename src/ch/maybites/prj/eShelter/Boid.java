@@ -55,17 +55,19 @@ public class Boid {
 	float t = 0;
 	boolean avoidWalls = false;
 
-	//final String MODELNAME = "/model/singleE_lowPoly.obj";
+	// final String MODELNAME = "/model/singleE_lowPoly.obj";
 	final String MODELNAME = "/model/singleE_lowPolyVolume.obj";
 	// final String MODELNAME = "/model/weirdobject.obj";
 
 	MayRandom random = new MayRandom();
 
-	int width, height, depth;
+	float width, height, depth;
+
+	public int selectX, selectY, selectZ;
 
 	private AbstractBin myRenderer;
 	private ModelData myModelData;
-    private Model myModel;
+	private Model myModel;
 
 	// constructors
 	Boid(int _width, int _height, int _depth) {
@@ -86,12 +88,16 @@ public class Boid {
 		height = _height;
 		depth = _depth;
 		pos = new PVector(width / 2, height / 2, depth);
-		//pos = new PVector(width, height, depth);
+		// pos = new PVector(width, height, depth);
 		vel = new PVector();
 		vel.set(inVel);
 		acc = new PVector(0, 0);
 		neighborhoodRadius = r;
-		
+
+		selectX = 0;
+		selectY = 0;
+		selectZ = 0;
+
 		try {
 			FileInputStream file = new FileInputStream(GlobalPreferences
 					.getInstance().getAbsResourcePath(MODELNAME));
@@ -104,20 +110,23 @@ public class Boid {
 		}
 
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
-		Mesh myModelMesh = Canvas.getInstance().getPlugin().drawablefactory().mesh(true, 
-				myModelData.vertices,3, 
-				myModelData.vertexColors, 4, 
-				myModelData.texCoordinates, 2,
-				myModelData.normals, 
-				myModelData.primitive);
+		Mesh myModelMesh = Canvas
+				.getInstance()
+				.getPlugin()
+				.drawablefactory()
+				.mesh(true, myModelData.vertices, 3, myModelData.vertexColors,
+						4, myModelData.texCoordinates, 2, myModelData.normals,
+						myModelData.primitive);
 
-		myModel = Canvas.getInstance().getPlugin().drawablefactory().model(myModelData, myModelMesh);
+		myModel = Canvas.getInstance().getPlugin().drawablefactory()
+				.model(myModelData, myModelMesh);
 
-		//TexturePlugin myTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
-		//myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
-		//myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
-		//myModel.mesh().material().addPlugin(myTexture);
-		
+		// TexturePlugin myTexture =
+		// Canvas.getInstance().getPlugin().drawablefactory().texture();
+		// myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
+		// myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
+		// myModel.mesh().material().addPlugin(myTexture);
+
 		myModel.mesh().material().lit = true;
 
 		/* add model to renderer */
@@ -125,8 +134,86 @@ public class Boid {
 
 	}
 
-	public void calcSector(float size){
-		
+	public void calcSector(float size) {
+		int bitSize = (int) (31 * size);
+		int startX = (int) ((width + pos.x + (width * size / 2)) / (width / 31));
+		int startY = (int) ((height + pos.y + (height * size / 2)) / (height / 31));
+		int startZ = (int) ((depth + pos.z + (depth * size / 2)) / (depth / 31));
+		selectX = 0;
+		selectY = 0;
+		selectZ = 0;
+		for (int i = 0; i < bitSize; i++) {
+			selectX = selectX | (int) Math.pow(2, --startX % 31);
+			selectY = selectY | (int) Math.pow(2, --startY % 31);
+			selectZ = selectZ | (int) Math.pow(2, --startZ % 31);
+		}
+	}
+	
+	private boolean sameSector(Boid _other){
+		return (((selectX & _other.selectX) | (selectY & _other.selectY) | (selectZ & _other.selectZ)) != 0)?true: false;
+	}
+
+	PVector myCohSum;
+	PVector mySteer;
+	PVector myAliSum;
+	PVector mySepSum;
+	PVector myRepulse;
+	int flockcounter;
+
+	void startRun(){
+		myCohSum = new PVector(0, 0, 0);
+		mySteer = new PVector(0, 0, 0);
+		myAliSum = new PVector(0, 0, 0);
+		mySepSum = new PVector(0, 0, 0);
+		flockcounter = 0;
+	}
+	
+	void newRun(Boid b){
+		newFlock(b);
+	}
+	
+	void newFlock(Boid b) {
+		if(sameSector(b)){
+			float d = PVector.dist(pos, b.pos);
+			if (d > 0 && d <= neighborhoodRadius) {
+				// alignment
+				myAliSum.add(b.vel);
+				b.myAliSum.add(vel); // mirror on the other boid
+
+				// cohesion
+				myCohSum.add(b.pos);
+				b.myCohSum.add(pos); // mirror on the other boid
+
+				// separation
+				myRepulse = PVector.sub(pos, b.pos);
+				myRepulse.normalize();
+				myRepulse.div(d);
+				mySepSum.add(myRepulse);
+				
+				b.myRepulse = PVector.sub(b.pos, pos); // mirror on the other boid
+				b.myRepulse.normalize();
+				b.myRepulse.div(d);
+				b.mySepSum.add(b.myRepulse);
+				
+				flockcounter++;
+				b.flockcounter++;
+			}
+		}
+	}
+
+	void endRun(){
+		if (flockcounter > 0) {
+			myAliSum.div((float) flockcounter);
+			myAliSum.limit(maxSteerForce);
+			myCohSum.div((float) flockcounter);
+		}
+		mySteer = PVector.sub(myCohSum, pos);
+		mySteer.limit(maxSteerForce);
+
+		acc.add(PVector.mult(myAliSum, 1));
+		acc.add(PVector.mult(mySteer, 3));
+		acc.add(PVector.mult(mySepSum, 1));
+		// acc.add(PVector.mult(sepSum, 1));
 	}
 	
 	void run(ArrayList<Boid> bl) {
@@ -146,7 +233,7 @@ public class Boid {
 			acc.add(PVector
 					.mult(avoid(new PVector(pos.x, pos.y, 900), true), 5));
 		}
-		newFlock(bl);
+		flock(bl);
 	}
 
 	void scatter() {
@@ -155,7 +242,6 @@ public class Boid {
 
 	// //------------------------------------
 
-	
 	void render(PApplet canvas) {
 		move();
 		checkBounds();
@@ -171,7 +257,7 @@ public class Boid {
 	}
 
 	void checkBounds() {
-		if (pos.x > width* 2)
+		if (pos.x > width * 2)
 			pos.x = 0;
 		if (pos.x < 0)
 			pos.x = width * 2;
@@ -185,13 +271,13 @@ public class Boid {
 			pos.z = 900;
 	}
 
-	void translation(){
+	void translation() {
 		myModel.mesh().transform().translation.x = pos.x - width;
 		myModel.mesh().transform().translation.y = pos.y - height;
 		myModel.mesh().transform().translation.z = pos.z;
 
-		myModel.mesh().rotation().y = (float)Math.atan2(-vel.z,vel.x);
-		myModel.mesh().rotation().z = (float)Math.asin(vel.y/vel.mag());
+		myModel.mesh().rotation().y = (float) Math.atan2(-vel.z, vel.x);
+		myModel.mesh().rotation().z = (float) Math.asin(vel.y / vel.mag());
 
 		myModel.mesh().scale(sc, sc, sc);
 	}
@@ -232,8 +318,7 @@ public class Boid {
 		return steer;
 	}
 
-	
-	void newFlock(ArrayList<Boid> boids) {
+	void flock(ArrayList<Boid> boids) {
 		PVector cohSum = new PVector(0, 0, 0);
 		PVector steer = new PVector(0, 0, 0);
 		PVector aliSum = new PVector(0, 0, 0);
@@ -242,16 +327,16 @@ public class Boid {
 		int count = 0;
 		for (int i = 0; i < boids.size(); i++) {
 			Boid b = (Boid) boids.get(i);
-			
+
 			float d = PVector.dist(pos, b.pos);
 			if (d > 0 && d <= neighborhoodRadius) {
-				//alignment
+				// alignment
 				aliSum.add(b.vel);
-				
-				//cohesion
+
+				// cohesion
 				cohSum.add(b.pos);
-				
-				//separation
+
+				// separation
 				repulse = PVector.sub(pos, b.pos);
 				repulse.normalize();
 				repulse.div(d);
@@ -267,13 +352,12 @@ public class Boid {
 		steer = PVector.sub(cohSum, pos);
 		steer.limit(maxSteerForce);
 
-		
 		acc.add(PVector.mult(aliSum, 1));
 		acc.add(PVector.mult(steer, 3));
 		acc.add(PVector.mult(sepSum, 1));
-		//acc.add(PVector.mult(sepSum, 1));
-		
+		// acc.add(PVector.mult(sepSum, 1));
+
 	}
-	
+
 
 }

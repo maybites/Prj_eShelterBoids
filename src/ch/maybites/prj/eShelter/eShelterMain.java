@@ -47,7 +47,7 @@ public class eShelterMain extends PApplet {
 
 	float angleX, angleY, transX, transY, transZ;
 	
-	int initBoidNum = 1000; // amount of boids to start the program with
+	int initBoidNum = 1200; // amount of boids to start the program with
 	BoidsList flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
