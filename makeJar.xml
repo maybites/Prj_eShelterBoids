@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 	<project name="Prj_eShelterBoids" default="default" basedir=".">
+		<description>
+ 		======================================================================================
+			Processing.org -> Eclipse Ant Builder for Applets and Applications
+
+				
+ 		======================================================================================
+ 		</description>
+ 	    <property name="workspace.location" value="/Users/maf/Arbeiten/02_code/eclipse"/>
+     	<property name="processing.dir" value="/Applications/Processing"/>
+        <property name="project.name" value="Prj_eShelterBoids"/>
+ 		<property name="main.class.name" value=""/>
+ 		<property name="jar1.name" value="maybitesCore.jar"/>
+ 		<property name="jar2.name" value="Expression.jar"/>
+ 		<property name="library.dir" value="/Users/maf/Arbeiten/02_code/library/java"/>
+ 		
+ 		
+
+<!--
+==================================================================
+	DO NOT CHANGE BELOW UNLESS YOU KNOW WHAT YOU ARE DOIN
+==================================================================-->		
+ 	   	<property name="project.lib.dir" value="${workspace.location}/${project.name}/lib"/>
+     	
+ 		<delete dir="${project.lib.dir}"/>
+ 			
+		<mkdir dir="${project.lib.dir}"/>
+ 		 
+		<target name ="default" description="check conditions">
+	 		<copy file="${library.dir}/${jar1.name}" todir="${project.lib.dir}"/>
+	 		<copy file="${library.dir}/${jar2.name}" todir="${project.lib.dir}"/>
+ 		</target>
+		
+ 	</project>
+ 
