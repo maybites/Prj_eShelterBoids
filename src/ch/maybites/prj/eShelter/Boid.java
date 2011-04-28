@@ -71,11 +71,13 @@ public class Boid {
 
 	// constructors
 	Boid(int _width, int _height, int _depth) {
-		init(_width,
+		init(	_width,
 				_height,
 				_depth,
-				new PVector(random.create(-1, 1), random.create(-1, 1), random
-						.create(1, -1)), 100);
+				new PVector(random.create(-1, 1), 
+				random.create(-1, 1),
+				random.create(1, -1)), 
+				100);
 	}
 
 	Boid(int _width, int _height, int _depth, PVector inVel, float r) {
@@ -87,7 +89,7 @@ public class Boid {
 		width = _width;
 		height = _height;
 		depth = _depth;
-		pos = new PVector(width / 2, height / 2, depth);
+		pos = new PVector(0, 0, depth/2);
 		// pos = new PVector(width, height, depth);
 		vel = new PVector();
 		vel.set(inVel);
@@ -132,25 +134,7 @@ public class Boid {
 		/* add model to renderer */
 		myRenderer.add(myModel);
 
-	}
-
-	public void calcSector(float size) {
-		int bitSize = (int) (31 * size);
-		int startX = (int) ((width + pos.x + (width * size / 2)) / (width / 31));
-		int startY = (int) ((height + pos.y + (height * size / 2)) / (height / 31));
-		int startZ = (int) ((depth + pos.z + (depth * size / 2)) / (depth / 31));
-		selectX = 0;
-		selectY = 0;
-		selectZ = 0;
-		for (int i = 0; i < bitSize; i++) {
-			selectX = selectX | (int) Math.pow(2, --startX % 31);
-			selectY = selectY | (int) Math.pow(2, --startY % 31);
-			selectZ = selectZ | (int) Math.pow(2, --startZ % 31);
-		}
-	}
-	
-	private boolean sameSector(Boid _other){
-		return (((selectX & _other.selectX) | (selectY & _other.selectY) | (selectZ & _other.selectZ)) != 0)?true: false;
+		calcReset();
 	}
 
 	PVector myCohSum;
@@ -160,63 +144,7 @@ public class Boid {
 	PVector myRepulse;
 	int flockcounter;
 
-	void startRun(){
-		myCohSum = new PVector(0, 0, 0);
-		mySteer = new PVector(0, 0, 0);
-		myAliSum = new PVector(0, 0, 0);
-		mySepSum = new PVector(0, 0, 0);
-		flockcounter = 0;
-	}
-	
-	void newRun(Boid b){
-		newFlock(b);
-	}
-	
-	void newFlock(Boid b) {
-		if(sameSector(b)){
-			float d = PVector.dist(pos, b.pos);
-			if (d > 0 && d <= neighborhoodRadius) {
-				// alignment
-				myAliSum.add(b.vel);
-				b.myAliSum.add(vel); // mirror on the other boid
-
-				// cohesion
-				myCohSum.add(b.pos);
-				b.myCohSum.add(pos); // mirror on the other boid
-
-				// separation
-				myRepulse = PVector.sub(pos, b.pos);
-				myRepulse.normalize();
-				myRepulse.div(d);
-				mySepSum.add(myRepulse);
-				
-				b.myRepulse = PVector.sub(b.pos, pos); // mirror on the other boid
-				b.myRepulse.normalize();
-				b.myRepulse.div(d);
-				b.mySepSum.add(b.myRepulse);
-				
-				flockcounter++;
-				b.flockcounter++;
-			}
-		}
-	}
-
-	void endRun(){
-		if (flockcounter > 0) {
-			myAliSum.div((float) flockcounter);
-			myAliSum.limit(maxSteerForce);
-			myCohSum.div((float) flockcounter);
-		}
-		mySteer = PVector.sub(myCohSum, pos);
-		mySteer.limit(maxSteerForce);
-
-		acc.add(PVector.mult(myAliSum, 1));
-		acc.add(PVector.mult(mySteer, 3));
-		acc.add(PVector.mult(mySepSum, 1));
-		// acc.add(PVector.mult(sepSum, 1));
-	}
-	
-	void run(ArrayList<Boid> bl) {
+	void calcReset() {
 		t += .1;
 		flap = 10 * (float) Math.sin(t);
 		// acc.add(steer(new PVector(mouseX,mouseY,300),true));
@@ -233,22 +161,52 @@ public class Boid {
 			acc.add(PVector
 					.mult(avoid(new PVector(pos.x, pos.y, 900), true), 5));
 		}
-		flock(bl);
+
+		myCohSum = new PVector(0, 0, 0);
+		mySteer = new PVector(0, 0, 0);
+		myAliSum = new PVector(0, 0, 0);
+		mySepSum = new PVector(0, 0, 0);
+		flockcounter = 0;
 	}
 
-	void scatter() {
+	void calcSolve(Boid b) {
+		float d = PVector.dist(pos, b.pos);
+		if (d > 0 && d <= neighborhoodRadius) {
+			// alignment
+			myAliSum.add(b.vel);
+			b.myAliSum.add(vel); // mirror on the other boid
 
+			// cohesion
+			myCohSum.add(b.pos);
+			b.myCohSum.add(pos); // mirror on the other boid
+
+			// separation
+			myRepulse = PVector.sub(pos, b.pos);
+			myRepulse.normalize();
+			myRepulse.div(d);
+			mySepSum.add(myRepulse);
+			
+			myRepulse.mult(-1.f); // mirror on the other boid
+			b.mySepSum.add(myRepulse);
+
+			flockcounter++;
+			b.flockcounter++; // mirror on the other boid
+		}
 	}
 
-	// //------------------------------------
+	void calcSet() {
+		if (flockcounter > 0) {
+			myAliSum.div((float) flockcounter);
+			myAliSum.limit(maxSteerForce);
+			myCohSum.div((float) flockcounter);
+		}
+		mySteer = PVector.sub(myCohSum, pos);
+		mySteer.limit(maxSteerForce);
 
-	void render(PApplet canvas) {
-		move();
-		checkBounds();
-		translation();
-	}
+		acc.add(PVector.mult(myAliSum, 1));
+		acc.add(PVector.mult(mySteer, 3));
+		acc.add(PVector.mult(mySepSum, 1));
 
-	void move() {
 		vel.add(acc); // add acceleration to velocity
 		vel.limit(maxSpeed); // make sure the velocity vector magnitude does not
 								// exceed maxSpeed
@@ -256,15 +214,26 @@ public class Boid {
 		acc.mult(0); // reset acceleration
 	}
 
+	void scatter() {
+
+	}
+
+	void render(PApplet canvas) {
+		calcSet();
+		checkBounds();
+		translation();
+		calcReset();
+	}
+
 	void checkBounds() {
-		if (pos.x > width * 2)
-			pos.x = 0;
-		if (pos.x < 0)
-			pos.x = width * 2;
-		if (pos.y > height * 2)
-			pos.y = 0;
-		if (pos.y < 0)
-			pos.y = height * 2;
+		if (pos.x > width)
+			pos.x = -width;
+		if (pos.x < -width)
+			pos.x = width;
+		if (pos.y > height)
+			pos.y = -height;
+		if (pos.y < -height)
+			pos.y = height;
 		if (pos.z > 900)
 			pos.z = 300;
 		if (pos.z < 300)
@@ -272,8 +241,8 @@ public class Boid {
 	}
 
 	void translation() {
-		myModel.mesh().transform().translation.x = pos.x - width;
-		myModel.mesh().transform().translation.y = pos.y - height;
+		myModel.mesh().transform().translation.x = pos.x;
+		myModel.mesh().transform().translation.y = pos.y;
 		myModel.mesh().transform().translation.z = pos.z;
 
 		myModel.mesh().rotation().y = (float) Math.atan2(-vel.z, vel.x);
@@ -317,47 +286,5 @@ public class Boid {
 		// maxSteerForce
 		return steer;
 	}
-
-	void flock(ArrayList<Boid> boids) {
-		PVector cohSum = new PVector(0, 0, 0);
-		PVector steer = new PVector(0, 0, 0);
-		PVector aliSum = new PVector(0, 0, 0);
-		PVector sepSum = new PVector(0, 0, 0);
-		PVector repulse;
-		int count = 0;
-		for (int i = 0; i < boids.size(); i++) {
-			Boid b = (Boid) boids.get(i);
-
-			float d = PVector.dist(pos, b.pos);
-			if (d > 0 && d <= neighborhoodRadius) {
-				// alignment
-				aliSum.add(b.vel);
-
-				// cohesion
-				cohSum.add(b.pos);
-
-				// separation
-				repulse = PVector.sub(pos, b.pos);
-				repulse.normalize();
-				repulse.div(d);
-				sepSum.add(repulse);
-				count++;
-			}
-		}
-		if (count > 0) {
-			aliSum.div((float) count);
-			aliSum.limit(maxSteerForce);
-			cohSum.div((float) count);
-		}
-		steer = PVector.sub(cohSum, pos);
-		steer.limit(maxSteerForce);
-
-		acc.add(PVector.mult(aliSum, 1));
-		acc.add(PVector.mult(steer, 3));
-		acc.add(PVector.mult(sepSum, 1));
-		// acc.add(PVector.mult(sepSum, 1));
-
-	}
-
 
 }

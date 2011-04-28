@@ -34,15 +34,12 @@ public class BoidsList {
 	float h; // for color
 
 	int width, height, depth;
-	
-	int counter;
 
 	BoidsList(int _width, int _height, int n, float ih) {
 		width = _width;
 		height = _height;
 		boids = new ArrayList<Boid>();
 		h = ih;
-		counter = 0;
 		for (int i = 0; i < n; i++)
 			boids.add(new Boid(width, height, 600));
 	}
@@ -56,36 +53,20 @@ public class BoidsList {
 	}
 
 	void run(boolean aW) {
-		counter++;
-		// iterate through the list of boids and let them cal their sector
-		for (int i = 0; i < boids.size(); i++){ 
-			Boid tempBoid = boids.get(i);
-			tempBoid.calcSector(.1f);
-			tempBoid.startRun();
-		}
-		
 		// iterate through the list of boids
 		for (int i = 0; i < boids.size(); i++){
 			// create a temporary boid
 			Boid tempBoid = (Boid) boids.get(i);
 			for (int j = i + 1; j < boids.size(); j++){//  and iterate through the rest of the boids
-				tempBoid.newRun(boids.get(j));
+				tempBoid.calcSolve(boids.get(j));
 			}
 		}
-		
-		for (int i = 0; i < boids.size(); i++){ 
-			Boid tempBoid = boids.get(i);
-			tempBoid.endRun();
-		}
 	}
-
+	
 	void render(PApplet canvas) {
-		for (int i = 0; i < boids.size(); i++) // iterate through the list of
-												// boids
-		{
-			boids.get(i).render(canvas); // create a temporary boid to process
-											// and make it the current boid in
-											// the list
+		// iterate through the list of boids
+		for (int i = 0; i < boids.size(); i++){
+			boids.get(i).render(canvas); 
 		}
 	}
 }

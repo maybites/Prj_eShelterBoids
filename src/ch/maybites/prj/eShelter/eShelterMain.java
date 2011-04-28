@@ -31,6 +31,7 @@ import controlP5.*;
 import processing.serial.*;
 import gestalt.Gestalt;
 import gestalt.p5.*;
+import gestalt.util.FPSCounter;
 import mathematik.*;
 
 public class eShelterMain extends PApplet {
@@ -45,15 +46,17 @@ public class eShelterMain extends PApplet {
 
 	GestaltPlugIn gestalt;
 
+	private FPSCounter myFPSCounter;
+
 	float angleX, angleY, transX, transY, transZ;
-	
-	int initBoidNum = 1200; // amount of boids to start the program with
+
+	int initBoidNum = 1400; // amount of boids to start the program with
 	BoidsList flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
 
 	public void setup() {
-		size(640, 640, OPENGL);
+		size(1200, 300, OPENGL);
 		System.out.println("gotscha");
 
 		Debugger.getInstance();
@@ -64,16 +67,17 @@ public class eShelterMain extends PApplet {
 		Canvas.setup(this);
 		gestalt = Canvas.getInstance().getPlugin();
 		gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
-		gestalt.camera().position().set(0f, 0f, -600f);
+		gestalt.camera().position().set(0f, 0f, -300f);
 		gestalt.camera().lookat().add(0f, 0f, 0f);
+		gestalt.camera().fovy = 40.0f;
+		println("fovy: " + gestalt.camera().fovy);
 
-        /* setup light */
+		/* setup light */
 		gestalt.light().enable = true;
-		//gestalt.light().setPositionRef(gestalt.camera().position());
+		// gestalt.light().setPositionRef(gestalt.camera().position());
 
 		// DisplayCapabilities.listDisplayDevices();
 
-		//size(800, 600, P3D);
 		// create and fill the list of boids
 		flock1 = new BoidsList(width, height, initBoidNum, 255);
 		// flock2 = new BoidList(100,255);
@@ -83,15 +87,6 @@ public class eShelterMain extends PApplet {
 
 		Debugger.getInstance().infoMessage(this.getClass(),
 				"loading settings and preferences...");
-		// myParameters = new FileParameters(this);
-		Debugger.getInstance().infoMessage(this.getClass(),
-				"... settings and preferences successfully loaded");
-
-		Debugger.getInstance().infoMessage(this.getClass(),
-				"loading plug selection and default mappings...");
-		// myPlugFactory = new PlugFactory(this);
-		Debugger.getInstance().infoMessage(this.getClass(),
-				"... plug selection and default mappings successfully loaded");
 
 		// myDispatcher = new Dispatcher(myPlugFactory);
 		// myConnector = new Connector(myParameters, myDispatcher, this);
@@ -104,6 +99,9 @@ public class eShelterMain extends PApplet {
 
 		// myConnector.appleScript.speakVoice("Bridge started");
 
+		/* fps counter */
+		setup_fpsCounter();
+		
 		angleX = 0;
 		angleY = 0;
 		transX = 0;
@@ -112,47 +110,47 @@ public class eShelterMain extends PApplet {
 
 	}
 
+	private void setup_fpsCounter(){
+		myFPSCounter = new FPSCounter();
+
+		/* set the interval of sampling */
+		myFPSCounter.setInterval(20);
+
+		/* create and a view of the FPS sampler */
+		gestalt.bin(gestalt.BIN_2D_FOREGROUND).add(myFPSCounter.display());
+		myFPSCounter.display().position.set(20, height/2);
+		myFPSCounter.display().color.set(1);
+	}
+	
 	public void draw() {
 		background(0);
 		// myDispatcher.draw(this);
 		// clear screen
-		
+
 		/**
-		beginCamera();
-		camera();
-		rotateX(map(mouseY, 0, height, 0, TWO_PI));
-		rotateY(map(mouseX, width, 0, 0, TWO_PI));
-		translate(0, 0, zoom);
-		endCamera();
-		background(205);
-		directionalLight(255, 255, 255, 0, 1, -100);
-		noFill();
-		stroke(0);
-
-		line(0, 0, 300, 0, height, 300);
-		line(0, 0, 900, 0, height, 900);
-		line(0, 0, 300, width, 0, 300);
-		line(0, 0, 900, width, 0, 900);
-
-		line(width, 0, 300, width, height, 300);
-		line(width, 0, 900, width, height, 900);
-		line(0, height, 300, width, height, 300);
-		line(0, height, 900, width, height, 900);
-
-		line(0, 0, 300, 0, 0, 900);
-		line(0, height, 300, 0, height, 900);
-		line(width, 0, 300, width, 0, 900);
-		line(width, height, 300, width, height, 900);
-		**/
+		 * beginCamera(); camera(); rotateX(map(mouseY, 0, height, 0, TWO_PI));
+		 * rotateY(map(mouseX, width, 0, 0, TWO_PI)); translate(0, 0, zoom);
+		 * endCamera(); background(205); directionalLight(255, 255, 255, 0, 1,
+		 * -100); noFill(); stroke(0);
+		 * 
+		 * line(0, 0, 300, 0, height, 300); line(0, 0, 900, 0, height, 900);
+		 * line(0, 0, 300, width, 0, 300); line(0, 0, 900, width, 0, 900);
+		 * 
+		 * line(width, 0, 300, width, height, 300); line(width, 0, 900, width,
+		 * height, 900); line(0, height, 300, width, height, 300); line(0,
+		 * height, 900, width, height, 900);
+		 * 
+		 * line(0, 0, 300, 0, 0, 900); line(0, height, 300, 0, height, 900);
+		 * line(width, 0, 300, width, 0, 900); line(width, height, 300, width,
+		 * height, 900);
+		 **/
 
 		flock1.run(avoidWalls);
 		flock1.render(this);
 		// flock2.run();
 		// flock3.run();
-		if (smoothEdges)
-			smooth();
-		else
-			noSmooth();
+		
+        myFPSCounter.loop();
 	}
 
 	public void keyPressed() {
