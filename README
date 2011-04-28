@@ -1,0 +1,14 @@
+/*
+ * eShelterBoids
+ *
+ * Copyright (C) 2011 Martin Fršhlich & Others
+ *
+ * Parts of the code is based on:
+ *
+ * 3D Boids Simulation: Matt Wetmore (http://www.openprocessing.org/visuals/?visualID=6910)
+ *
+ * Its a boids simulation for the Processing Framework developed in eclipse
+ *
+ * Needed Libraries: gestaltP5 
+ *
+ */
