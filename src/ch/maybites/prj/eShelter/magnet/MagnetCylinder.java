@@ -16,9 +16,9 @@ import gestalt.render.bin.AbstractBin;
 import gestalt.shape.Mesh;
 import processing.core.*;
 
-public class MagnetSphere implements Magnet{
+public class MagnetCylinder implements Magnet{
 
-	final String MODELNAME = "/model/magnet/sphere.obj";
+	final String MODELNAME = "/model/magnet/cylinder.obj";
 
 	public final static int LEVEL_ATTRACTION_LINEAR = 0;
 	public final static int INNER_ATTRACTION_LINEAR = 1;
@@ -31,20 +31,21 @@ public class MagnetSphere implements Magnet{
 
 	int attractionType;
 
-	PVector pos;
+	PVector pos, pos2d;
 
 	private AbstractBin myRenderer;
 	private ModelData myModelData;
 	private Model myInnerModel;
 	private Model myOuterModel;
 	
-	public MagnetSphere(PVector _pos, int _attractionType, float _innerRadius,
+	public MagnetCylinder(PVector _pos, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce) {
 		innerRadius = _innerRadius;
 		outerRadius = _outerRadius;
 		attractionType = _attractionType;
 		maxAttractionForce = _maxAttractionForce;
 		pos = _pos;
+		pos2d = new PVector(pos.x, pos.z);
 		setupRenderer();
 		display();
 	}
@@ -97,13 +98,13 @@ public class MagnetSphere implements Magnet{
 		myInnerModel.mesh().transform().translation.y = pos.y;
 		myInnerModel.mesh().transform().translation.z = pos.z;
 
-		myInnerModel.mesh().scale(innerRadius, innerRadius, innerRadius);
+		myInnerModel.mesh().scale(innerRadius, 300, innerRadius);
 
 		myOuterModel.mesh().transform().translation.x = pos.x;
 		myOuterModel.mesh().transform().translation.y = pos.y;
 		myOuterModel.mesh().transform().translation.z = pos.z;
 
-		myOuterModel.mesh().scale(outerRadius, outerRadius, outerRadius);
+		myOuterModel.mesh().scale(outerRadius, 300, outerRadius);
 
 	}
 
@@ -116,12 +117,13 @@ public class MagnetSphere implements Magnet{
 		myRenderer.remove(myInnerModel);
 		myRenderer.remove(myOuterModel);
 	}
-
+	
 	public PVector getAttractionForce(Boid _boid) {
-		float d = PVector.dist(pos, _boid.pos);
+		PVector flatBoid = new PVector(_boid.pos.x, _boid.pos.z);
+		float d = PVector.dist(pos2d, flatBoid);
 		if (d > innerRadius && d <= outerRadius) {
 			PVector steer = new PVector(); // creates vector for steering
-			steer.set(PVector.sub(pos, _boid.pos)); // steering vector points
+			steer.set(PVector.sub(pos2d, flatBoid)); // steering vector points
 			steer.normalize();
 			// multiply according to the distance and attraction type
 			switch (attractionType) {
@@ -135,7 +137,7 @@ public class MagnetSphere implements Magnet{
 				steer.mult(getOuterAttractionLinear(d));
 				break;
 			}
-			return steer;
+			return new PVector(steer.x, 0, steer.y);
 		}
 		return new PVector();
 	}

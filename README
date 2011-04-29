@@ -7,8 +7,8 @@
  *
  * 3D Boids Simulation: Matt Wetmore (http://www.openprocessing.org/visuals/?visualID=6910)
  *
- * Its a boids simulation for the Processing Framework developed in eclipse
+ * eShelterBoids is a boids simulation for the Processing Framework developed in eclipse
  *
- * Needed Libraries: gestaltP5 
+ * Needed Libraries: gestaltP5 (http://www.the-product.org/gestalt/)
  *
  */

@@ -32,8 +32,7 @@ import gestalt.render.bin.AbstractBin;
 
 import java.util.*;
 
-import ch.maybites.prj.eShelter.magnet.MagnetSphere;
-import ch.maybites.prj.eShelter.magnet.Magnet;
+import ch.maybites.prj.eShelter.magnet.*;
 import processing.core.*;
 
 public class BoidsList {
@@ -75,8 +74,12 @@ public class BoidsList {
 		
 		setupRenderer();
 		
-		magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
-		magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 200, 900, -.5f));
+		//magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(width / 4, 0, 400), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(-width / 2, 0, 400), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(-width / 4, 0, 500), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(0, 0, 500), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
 	}
 
 	private void setupRenderer() {
@@ -98,6 +101,14 @@ public class BoidsList {
 		myInnerModel.position().z = pos.z;
 
 		myRenderer.add(myInnerModel);
+	}
+	
+	public void display(){
+		myRenderer.add(myInnerModel);
+	}
+	
+	public void noDisplay(){
+		myRenderer.remove(myInnerModel);
 	}
 
 	void add() {
