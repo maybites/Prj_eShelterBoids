@@ -68,20 +68,24 @@ public class Boid {
 	private AbstractBin myRenderer;
 	private ModelData myModelData;
 	private Model myModel;
+	
+	BoidsList manager;
 
 	// constructors
-	Boid(int _width, int _height, int _depth) {
-		init(	_width,
-				_height,
-				_depth,
+	Boid(BoidsList _manager) {
+		manager = _manager;
+		init(	manager.width,
+				manager.height,
+				manager.depth,
 				new PVector(random.create(-1, 1), 
 				random.create(-1, 1),
 				random.create(1, -1)), 
 				100);
 	}
 
-	Boid(int _width, int _height, int _depth, PVector inVel, float r) {
-		init(_width, _height, _depth, inVel, r);
+	Boid(BoidsList _manager, PVector inVel, float r) {
+		manager = _manager;
+		init(manager.width, manager.height, manager.depth, inVel, r);
 	}
 
 	private void init(int _width, int _height, int _depth, PVector inVel,
@@ -220,11 +224,12 @@ public class Boid {
 
 	void render(PApplet canvas) {
 		calcSet();
-		checkBounds();
+		manager.checkBounds(this);
 		translation();
 		calcReset();
 	}
 
+	/**
 	void checkBounds() {
 		if (pos.x > width)
 			pos.x = -width;
@@ -239,7 +244,8 @@ public class Boid {
 		if (pos.z < 300)
 			pos.z = 900;
 	}
-
+	**/
+	
 	void translation() {
 		myModel.mesh().transform().translation.x = pos.x;
 		myModel.mesh().transform().translation.y = pos.y;

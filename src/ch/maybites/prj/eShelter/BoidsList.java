@@ -30,22 +30,29 @@ import java.util.*;
 import processing.core.*;
 
 public class BoidsList {
-	ArrayList<Boid> boids; // will hold the boids in this BoidList
+	private ArrayList<Boid> boids; // will hold the boids in this BoidList
 	float h; // for color
 
-	int width, height, depth;
+	public int width, height, depth;
+	
+	private int maxSize;
 
 	BoidsList(int _width, int _height, int n, float ih) {
 		width = _width;
 		height = _height;
+		depth = 700;
+		maxSize = n;
 		boids = new ArrayList<Boid>();
 		h = ih;
-		for (int i = 0; i < n; i++)
-			boids.add(new Boid(width, height, 600));
 	}
 
+	void init(){
+		for (int i = 0; i < maxSize; i++)
+			boids.add(new Boid(this));
+	}
+	
 	void add() {
-		boids.add(new Boid(width, height, 0));
+		boids.add(new Boid(this));
 	}
 
 	void addBoid(Boid b) {
@@ -62,7 +69,22 @@ public class BoidsList {
 			}
 		}
 	}
-	
+
+	void checkBounds(Boid boid) {
+		if (boid.pos.x > width)
+			boid.pos.x = -width;
+		if (boid.pos.x < -width)
+			boid.pos.x = width;
+		if (boid.pos.y > height)
+			boid.pos.y = -height;
+		if (boid.pos.y < -height)
+			boid.pos.y = height;
+		if (boid.pos.z > 900)
+			boid.pos.z = 300;
+		if (boid.pos.z < 300)
+			boid.pos.z = 900;
+	}
+
 	void render(PApplet canvas) {
 		// iterate through the list of boids
 		for (int i = 0; i < boids.size(); i++){

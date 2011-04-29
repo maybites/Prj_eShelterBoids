@@ -50,13 +50,13 @@ public class eShelterMain extends PApplet {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 1400; // amount of boids to start the program with
+	int initBoidNum = 1000; // amount of boids to start the program with
 	BoidsList flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
 
 	public void setup() {
-		size(1200, 300, OPENGL);
+		size(3840, 1024, OPENGL);
 		System.out.println("gotscha");
 
 		Debugger.getInstance();
@@ -74,12 +74,14 @@ public class eShelterMain extends PApplet {
 
 		/* setup light */
 		gestalt.light().enable = true;
-		// gestalt.light().setPositionRef(gestalt.camera().position());
+		gestalt.light().position().set(gestalt.camera().position());
+		//gestalt.light().setPositionRef(gestalt.camera().position());
 
 		// DisplayCapabilities.listDisplayDevices();
 
 		// create and fill the list of boids
 		flock1 = new BoidsList(width, height, initBoidNum, 255);
+		flock1.init();
 		// flock2 = new BoidList(100,255);
 		// flock3 = new BoidList(100,128);
 
@@ -123,7 +125,7 @@ public class eShelterMain extends PApplet {
 	}
 	
 	public void draw() {
-		background(0);
+		background(120);
 		// myDispatcher.draw(this);
 		// clear screen
 
