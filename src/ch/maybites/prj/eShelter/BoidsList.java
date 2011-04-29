@@ -26,37 +26,90 @@
 
 package ch.maybites.prj.eShelter;
 
+import gestalt.Gestalt;
+import gestalt.shape.*;
+import gestalt.render.bin.AbstractBin;
+
 import java.util.*;
+
+import ch.maybites.prj.eShelter.magnet.MagnetSphere;
+import ch.maybites.prj.eShelter.magnet.Magnet;
 import processing.core.*;
 
 public class BoidsList {
 	private ArrayList<Boid> boids; // will hold the boids in this BoidList
+	private ArrayList<Magnet> magnets; // will hold the magnets in this BoidList
 	float h; // for color
+	
+	PVector pos;
 
 	public int width, height, depth;
 	
 	private int maxSize;
 
+	private AbstractBin myRenderer;
+	private Cube myInnerModel;
+	
+	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
+
 	BoidsList(int _width, int _height, int n, float ih) {
 		width = _width;
 		height = _height;
-		depth = 700;
+		depth = 600;
+		pos = new PVector();
+		pos.set(0, 0, (depth / 2) + 300);
+		
+		borderLeft = width;
+		borderRight = - width;
+		borderTop = height;
+		borderBottom = - height;
+		borderFront = 300;
+		borderBack = 300 + depth;
+		
 		maxSize = n;
 		boids = new ArrayList<Boid>();
+		magnets = new ArrayList<Magnet>();
 		h = ih;
+		for (int i = 0; i < maxSize; i++)
+			add();
+		
+		setupRenderer();
+		
+		magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
+		magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 200, 900, -.5f));
 	}
 
-	void init(){
-		for (int i = 0; i < maxSize; i++)
-			boids.add(new Boid(this));
+	private void setupRenderer() {
+		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
+
+		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
+
+		// TexturePlugin myTexture =
+		// Canvas.getInstance().getPlugin().drawablefactory().texture();
+		// myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
+		// myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
+		// myModel.mesh().material().addPlugin(myTexture);
+
+		myInnerModel.material().wireframe = true;
+
+		myInnerModel.scale(width * 2, height * 2, depth);
+		myInnerModel.position().x = pos.x;
+		myInnerModel.position().y = pos.y;
+		myInnerModel.position().z = pos.z;
+
+		myRenderer.add(myInnerModel);
 	}
-	
+
 	void add() {
-		boids.add(new Boid(this));
+		boids.add(new Boid(new PVector(0, 0, 0)));
 	}
 
 	void addBoid(Boid b) {
 		boids.add(b);
+	}
+
+	void addMagnet(Magnet m) {
+		magnets.add(m);
 	}
 
 	void run(boolean aW) {
@@ -65,30 +118,38 @@ public class BoidsList {
 			// create a temporary boid
 			Boid tempBoid = (Boid) boids.get(i);
 			for (int j = i + 1; j < boids.size(); j++){//  and iterate through the rest of the boids
-				tempBoid.calcSolve(boids.get(j));
+				tempBoid.calcFlock(boids.get(j));
 			}
 		}
 	}
 
 	void checkBounds(Boid boid) {
-		if (boid.pos.x > width)
-			boid.pos.x = -width;
-		if (boid.pos.x < -width)
-			boid.pos.x = width;
-		if (boid.pos.y > height)
-			boid.pos.y = -height;
-		if (boid.pos.y < -height)
-			boid.pos.y = height;
-		if (boid.pos.z > 900)
-			boid.pos.z = 300;
-		if (boid.pos.z < 300)
-			boid.pos.z = 900;
+		if (boid.pos.x > borderLeft)
+			boid.pos.x = borderRight;
+		if (boid.pos.x < borderRight)
+			boid.pos.x = borderLeft;
+		if (boid.pos.y > borderTop)
+			boid.pos.y = borderBottom;
+		if (boid.pos.y < borderBottom)
+			boid.pos.y = borderTop;
+		if (boid.pos.z > borderBack)
+			boid.pos.z = borderFront;
+		if (boid.pos.z < borderFront)
+			boid.pos.z = borderBack;
 	}
 
 	void render(PApplet canvas) {
 		// iterate through the list of boids
 		for (int i = 0; i < boids.size(); i++){
-			boids.get(i).render(canvas); 
+			Boid tempBoid = boids.get(i); 
+			tempBoid.calcFlockAcceleration();
+			for (int j = 0; j < magnets.size(); j++){
+				tempBoid.calcForceAcceleration(magnets.get(j));
+			}
+			tempBoid.applyAcceleration();
+			checkBounds(tempBoid);
+			tempBoid.applyTranslation();
+			tempBoid.calcReset();
 		}
 	}
 }

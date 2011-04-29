@@ -56,7 +56,7 @@ public class eShelterMain extends PApplet {
 	boolean smoothEdges = false, avoidWalls = false;
 
 	public void setup() {
-		size(3840, 1024, OPENGL);
+		size(1200, 300, OPENGL);
 		System.out.println("gotscha");
 
 		Debugger.getInstance();
@@ -69,7 +69,7 @@ public class eShelterMain extends PApplet {
 		gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
 		gestalt.camera().position().set(0f, 0f, -300f);
 		gestalt.camera().lookat().add(0f, 0f, 0f);
-		gestalt.camera().fovy = 40.0f;
+		gestalt.camera().fovy = 60.0f;
 		println("fovy: " + gestalt.camera().fovy);
 
 		/* setup light */
@@ -81,7 +81,6 @@ public class eShelterMain extends PApplet {
 
 		// create and fill the list of boids
 		flock1 = new BoidsList(width, height, initBoidNum, 255);
-		flock1.init();
 		// flock2 = new BoidList(100,255);
 		// flock3 = new BoidList(100,128);
 
