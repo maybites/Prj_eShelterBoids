@@ -9,6 +9,8 @@
  *
  * eShelterBoids is a boids simulation for the Processing Framework developed in eclipse
  *
- * Needed Libraries: gestaltP5 (http://www.the-product.org/gestalt/)
+ * Needed Libraries: 
+ * 		gestaltP5 (http://www.the-product.org/gestalt/)
+ *		JavaOSC (http://www.illposed.com/software/javaosc.html)
  *
  */
