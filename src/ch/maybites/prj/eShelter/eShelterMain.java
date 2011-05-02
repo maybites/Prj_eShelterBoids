@@ -34,7 +34,10 @@ import gestalt.p5.*;
 import gestalt.util.FPSCounter;
 import mathematik.*;
 
-public class eShelterMain extends PApplet {
+import com.illposed.osc.OSCListener;
+import com.illposed.osc.OSCMessage;
+
+public class eShelterMain extends PApplet implements OSCListener {
 	private static final long serialVersionUID = 1L;
 
 	// ConfigGUI myGUI;
@@ -51,7 +54,7 @@ public class eShelterMain extends PApplet {
 	float angleX, angleY, transX, transY, transZ;
 
 	int initBoidNum = 1000; // amount of boids to start the program with
-	BoidsList flock1;// ,flock2,flock3;
+	BoidsSim flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
 
@@ -62,25 +65,30 @@ public class eShelterMain extends PApplet {
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
 
+		CommunicationHub.setup(9030, 9040, "10.0.0.255");
+		CommunicationHub.getInstance().sendOscMessage(
+				new OSCMessage("/testtest"));
+
 		GlobalPreferences.getInstance().setDataPath(this.dataPath(""));
 
 		Canvas.setup(this);
 		gestalt = Canvas.getInstance().getPlugin();
 		gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
-		gestalt.camera().position().set(0f, 0f, -300f);
-		gestalt.camera().lookat().add(0f, 0f, 0f);
-		gestalt.camera().fovy = 60.0f;
+		gestalt.camera().position().set(0f, 0f, -700f);
+		gestalt.camera().lookat().set(0f, 0f, 100f);
+		gestalt.camera().fovy = 78.0f;
 		println("fovy: " + gestalt.camera().fovy);
 
 		/* setup light */
 		gestalt.light().enable = true;
-		gestalt.light().position().set(gestalt.camera().position());
-		//gestalt.light().setPositionRef(gestalt.camera().position());
+		gestalt.light().position().set(0f, 0f, 0f);
+		// gestalt.light().setPositionRef(gestalt.camera().position());
 
 		// DisplayCapabilities.listDisplayDevices();
 
 		// create and fill the list of boids
-		flock1 = new BoidsList(width, height, initBoidNum, 255);
+		flock1 = new BoidsSim(width, height, initBoidNum, 255);
+		flock1.addToOSCListener();
 		// flock2 = new BoidList(100,255);
 		// flock3 = new BoidList(100,128);
 
@@ -102,29 +110,30 @@ public class eShelterMain extends PApplet {
 
 		/* fps counter */
 		setup_fpsCounter();
-		
+
 		angleX = 0;
 		angleY = 0;
 		transX = 0;
 		transY = 0;
 		transZ = 0;
+		
+		addToOSCListener();
 
 	}
 
-	private void setup_fpsCounter(){
+	private void setup_fpsCounter() {
 		myFPSCounter = new FPSCounter();
 
 		/* set the interval of sampling */
 		myFPSCounter.setInterval(20);
 
 		/* create and a view of the FPS sampler */
-		gestalt.bin(gestalt.BIN_2D_FOREGROUND).add(myFPSCounter.display());
-		myFPSCounter.display().position.set(20, height/2);
+		myFPSCounter.display().position.set(20, height / 2);
 		myFPSCounter.display().color.set(1);
 	}
-	
+
 	public void draw() {
-		background(120);
+		background(0);
 		// myDispatcher.draw(this);
 		// clear screen
 
@@ -150,8 +159,8 @@ public class eShelterMain extends PApplet {
 		flock1.render(this);
 		// flock2.run();
 		// flock3.run();
-		
-        myFPSCounter.loop();
+
+		myFPSCounter.loop();
 	}
 
 	public void keyPressed() {
@@ -177,17 +186,115 @@ public class eShelterMain extends PApplet {
 		gestalt.camera().position().x += (mouseX - pmouseX);
 		gestalt.camera().position().y += (mouseY - pmouseY);
 	}
-
-	void controlEvent(ControlEvent theEvent) {
-		// myGUI.controlEvent(theEvent);
+	
+	private void setCameraFovy(float value){
+		gestalt.camera().fovy = value;
+	}
+	
+	/**
+	 * dont works
+	 * @param value
+	 */
+	private void setLightIntensity(float value){
+		gestalt.light().intesity = value;
+	}
+	
+	private void setCameraLookAt(int value){
+		if(value == 1)
+			gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
+		else
+			gestalt.camera().setMode(Gestalt.CAMERA_MODE_ROTATE_XYZ);
+	}
+	
+	private void setLightEnable(int value){
+		if(value == 1)
+			gestalt.light().enable = true;
+		else
+			gestalt.light().enable = false;
+	}
+	
+	private void setShowFPSCounter(int value){
+		if(value == 1)
+			gestalt.bin(gestalt.BIN_2D_FOREGROUND).add(myFPSCounter.display());
+		else
+			gestalt.bin(gestalt.BIN_2D_FOREGROUND).remove(myFPSCounter.display());
+	}
+	
+	private void setCameraPosition(float posx, float posy, float posz){
+		gestalt.camera().position().set(posx, posy, posz);
+	}
+	
+	private void setLightPosition(float posx, float posy, float posz){
+		gestalt.light().position().set(posx, posy, posz);
+	}
+	
+	/**
+	 * dont works
+	 * @param posx
+	 * @param posy
+	 * @param posz
+	 */
+	private void setLightColor(float posx, float posy, float posz){
+		gestalt.light().ambient.set(posx, posy, posz);
+	}
+	
+	private void setCameraLookAt(float posx, float posy, float posz){
+		gestalt.camera().lookat().set(posx, posy, posz);
 	}
 
-	public Serial startSerialConnection(String id) {
-		return new Serial(this, id, 115200);
+	public void acceptMessage(java.util.Date time, OSCMessage _message) {
+		try {
+			if (_message.getAddress().equals("/simulation/light/intensity"))
+				setLightIntensity(((Float) (_message.getArguments()[0])).floatValue());
+			if (_message.getAddress().equals("/simulation/camera/fovy"))
+				setCameraFovy(((Float) (_message.getArguments()[0])).floatValue());
+			if (_message.getAddress().equals("/simulation/camera/setlookat"))
+				setCameraLookAt(((Integer) (_message.getArguments()[0])).intValue());
+			if (_message.getAddress().equals("/simulation/light/enable"))
+				setLightEnable(((Integer) (_message.getArguments()[0])).intValue());
+			if (_message.getAddress().equals("/simulation/fpscounter/show"))
+				setShowFPSCounter(((Integer) (_message.getArguments()[0])).intValue());
+			if (_message.getAddress().equals("/simulation/camera/position"))
+				setCameraPosition(
+						((Float) (_message.getArguments()[0])).floatValue(),
+						((Float) (_message.getArguments()[1])).floatValue(),
+						((Float) (_message.getArguments()[2])).floatValue());
+			if (_message.getAddress().equals("/simulation/light/position"))
+				setLightPosition(
+						((Float) (_message.getArguments()[0])).floatValue(),
+						((Float) (_message.getArguments()[1])).floatValue(),
+						((Float) (_message.getArguments()[2])).floatValue());
+			if (_message.getAddress().equals("/simulation/light/color"))
+				setLightColor(
+						((Float) (_message.getArguments()[0])).floatValue(),
+						((Float) (_message.getArguments()[1])).floatValue(),
+						((Float) (_message.getArguments()[2])).floatValue());
+			if (_message.getAddress().equals("/simulation/camera/lookat"))
+				setCameraLookAt(
+						((Float) (_message.getArguments()[0])).floatValue(),
+						((Float) (_message.getArguments()[1])).floatValue(),
+						((Float) (_message.getArguments()[2])).floatValue());
+		} catch (ArrayIndexOutOfBoundsException e) {
+			Debugger.getInstance().warningMessage(this.getClass(),
+					"OSC Message in wrong format: " + _message.getAddress());
+		} catch (ClassCastException e) {
+			Debugger.getInstance().warningMessage(
+					this.getClass(),
+					"OSC Message Data in wrong format: "
+							+ _message.getAddress() + " -> " + e.getMessage());
+		}
 	}
 
-	public void serialEvent(Serial message) {
-		// myConnector.receiveSerialMessage(message);
+	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/simulation/fpscounter/show", this);
+		CommunicationHub.getInstance().addListener("/simulation/light/enable", this);
+		CommunicationHub.getInstance().addListener("/simulation/light/color", this);
+		CommunicationHub.getInstance().addListener("/simulation/light/intensity", this);
+		CommunicationHub.getInstance().addListener("/simulation/light/position", this);
+		CommunicationHub.getInstance().addListener("/simulation/camera/position", this);
+		CommunicationHub.getInstance().addListener("/simulation/camera/setlookat", this);
+		CommunicationHub.getInstance().addListener("/simulation/camera/lookat", this);
+		CommunicationHub.getInstance().addListener("/simulation/camera/fovy", this);
 	}
 
 	static public void main(String args[]) {

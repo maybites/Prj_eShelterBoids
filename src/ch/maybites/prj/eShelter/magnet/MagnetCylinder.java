@@ -47,7 +47,6 @@ public class MagnetCylinder implements Magnet{
 		pos = _pos;
 		pos2d = new PVector(pos.x, pos.z);
 		setupRenderer();
-		display();
 	}
 
 	private void setupRenderer() {
@@ -108,16 +107,16 @@ public class MagnetCylinder implements Magnet{
 
 	}
 
-	public void display(){
-		myRenderer.add(myInnerModel);
-		myRenderer.add(myOuterModel);
+	public void showOutlines(int i){
+		if(i == 1){
+			myRenderer.add(myInnerModel);
+			myRenderer.add(myOuterModel);
+		}else{
+			myRenderer.remove(myInnerModel);
+			myRenderer.remove(myOuterModel);
+		}
 	}
-	
-	public void noDisplay(){
-		myRenderer.remove(myInnerModel);
-		myRenderer.remove(myOuterModel);
-	}
-	
+		
 	public PVector getAttractionForce(Boid _boid) {
 		PVector flatBoid = new PVector(_boid.pos.x, _boid.pos.z);
 		float d = PVector.dist(pos2d, flatBoid);

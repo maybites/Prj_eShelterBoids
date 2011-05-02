@@ -46,7 +46,6 @@ public class MagnetSphere implements Magnet{
 		maxAttractionForce = _maxAttractionForce;
 		pos = _pos;
 		setupRenderer();
-		display();
 	}
 
 	private void setupRenderer() {
@@ -107,14 +106,14 @@ public class MagnetSphere implements Magnet{
 
 	}
 
-	public void display(){
-		myRenderer.add(myInnerModel);
-		myRenderer.add(myOuterModel);
-	}
-	
-	public void noDisplay(){
-		myRenderer.remove(myInnerModel);
-		myRenderer.remove(myOuterModel);
+	public void showOutlines(int i){
+		if(i == 1){
+			myRenderer.add(myInnerModel);
+			myRenderer.add(myOuterModel);
+		}else{
+			myRenderer.remove(myInnerModel);
+			myRenderer.remove(myOuterModel);
+		}
 	}
 
 	public PVector getAttractionForce(Boid _boid) {

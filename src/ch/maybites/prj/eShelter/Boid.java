@@ -87,14 +87,11 @@ public class Boid {
 		init(_pos, inVel, r);
 	}
 
-	private void init(PVector _pos, PVector inVel,
-			float r) {
+	private void init(PVector _pos, PVector inVel, float r) {
 		type = 0;
-		pos = new PVector();
-		pos.set(_pos);
-		vel = new PVector();
-		vel.set(inVel);
-		acc = new PVector(0, 0);
+		pos = new PVector(_pos.x, _pos.y, _pos.z);
+		vel = new PVector(inVel.x, inVel.y, inVel.z);
+		acc = new PVector(0, 0, 0);
 		neighborhoodRadius = r;
 		uuid = java.util.UUID.randomUUID();
 		
@@ -132,11 +129,12 @@ public class Boid {
 		// myModel.mesh().material().addPlugin(myTexture);
 
 		myModel.mesh().material().lit = true;
+		myModel.mesh().material().color.set(0.1f, .5f, 1f);
 
 		/* add model to renderer */
 		myRenderer.add(myModel);
 	}
-
+	
 	void calcReset() {
 		t += .1;
 		flap = 10 * (float) Math.sin(t);

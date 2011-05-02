@@ -34,10 +34,13 @@ import java.util.*;
 
 import ch.maybites.prj.eShelter.magnet.*;
 import processing.core.*;
+import com.illposed.osc.*;
 
-public class BoidsList {
+public class BoidsSim implements OSCListener{
 	private ArrayList<Boid> boids; // will hold the boids in this BoidList
 	private ArrayList<Magnet> magnets; // will hold the magnets in this BoidList
+	private MessageQueue messageQueue;
+	
 	float h; // for color
 	
 	PVector pos;
@@ -51,23 +54,24 @@ public class BoidsList {
 	
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
-	BoidsList(int _width, int _height, int n, float ih) {
-		width = _width;
-		height = _height;
+	BoidsSim(int _width, int _height, int n, float ih) {
+		width = _width * 2;
+		height = _height * 2;
 		depth = 600;
 		pos = new PVector();
-		pos.set(0, 0, (depth / 2) + 300);
+		pos.set(0, 0, 0);
 		
-		borderLeft = width;
-		borderRight = - width;
-		borderTop = height;
-		borderBottom = - height;
-		borderFront = 300;
-		borderBack = 300 + depth;
+		borderLeft = width / 2;
+		borderRight = - width/ 2;
+		borderTop = height / 2;
+		borderBottom = - height / 2;
+		borderFront = -depth / 2;
+		borderBack = depth / 2;
 		
 		maxSize = n;
 		boids = new ArrayList<Boid>();
 		magnets = new ArrayList<Magnet>();
+		messageQueue = new MessageQueue();
 		h = ih;
 		for (int i = 0; i < maxSize; i++)
 			add();
@@ -75,11 +79,13 @@ public class BoidsList {
 		setupRenderer();
 		
 		//magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(width / 4, 0, 400), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(-width / 2, 0, 400), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(-width / 4, 0, 500), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(0, 0, 500), MagnetSphere.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		//magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		//magnets.add(new MagnetCylinder(new PVector(width / 4, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		//magnets.add(new MagnetCylinder(new PVector(-width / 2, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		//magnets.add(new MagnetCylinder(new PVector(-width / 4, 0, 500), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		//magnets.add(new MagnetCylinder(new PVector(0, 0, 500), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new EnergyField(new PVector(200, 0, 0), new PVector(200, 50, 50), new PVector(-3, 0, 0)));
+		magnets.add(new EnergyField(new PVector(-200, 0, 0), new PVector(50, 200, 50), new PVector(0, -3, 0)));
 	}
 
 	private void setupRenderer() {
@@ -95,16 +101,20 @@ public class BoidsList {
 
 		myInnerModel.material().wireframe = true;
 
-		myInnerModel.scale(width * 2, height * 2, depth);
-		myInnerModel.position().x = pos.x;
-		myInnerModel.position().y = pos.y;
-		myInnerModel.position().z = pos.z;
+		myInnerModel.scale(width, height, depth);
+		myInnerModel.position().set(pos.x, pos.y, pos.z);
 
-		myRenderer.add(myInnerModel);
 	}
 	
-	public void display(){
-		myRenderer.add(myInnerModel);
+	public void showOutlines(int i){
+		if(i == 1)
+			myRenderer.add(myInnerModel);
+		else
+			myRenderer.remove(myInnerModel);
+		
+		for (int j = 0; j < magnets.size(); j++){
+			magnets.get(j).showOutlines(i);
+		}
 	}
 	
 	public void noDisplay(){
@@ -161,6 +171,36 @@ public class BoidsList {
 			checkBounds(tempBoid);
 			tempBoid.applyTranslation();
 			tempBoid.calcReset();
+			
+			executeMessages();
 		}
+	}
+	
+	public void acceptMessage(java.util.Date time, OSCMessage _message){
+		messageQueue.addMessage((OSCMessage)_message);
+	}
+	
+	private void executeMessages(){
+		OSCMessage _message;
+		while(messageQueue.hasMoreMessages()){
+			_message = messageQueue.removeNextMessage();
+			try{
+				if(_message.getAddress().equals("/simulation/manager/showoutlines"))
+					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
+			}catch (ArrayIndexOutOfBoundsException e){
+				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
+			}catch (ClassCastException e){
+				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message Data in wrong format: "+ _message.getAddress() + " -> " + e.getMessage());
+			}
+		}
+				
+	}
+
+	/*
+	 * If this class needs to be listening to osc messages, call this message
+	 * after instantiation is done.
+	 */
+	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/simulation/manager/showoutlines", this);
 	}
 }
