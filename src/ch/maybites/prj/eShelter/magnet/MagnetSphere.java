@@ -26,6 +26,7 @@ public class MagnetSphere implements Magnet{
 
 	float innerRadius;
 	float outerRadius;
+	String id;
 
 	float maxAttractionForce;
 
@@ -46,6 +47,22 @@ public class MagnetSphere implements Magnet{
 		maxAttractionForce = _maxAttractionForce;
 		pos = _pos;
 		setupRenderer();
+		id = "default";
+	}
+
+	public MagnetSphere(String _id, PVector _pos, int _attractionType, float _innerRadius,
+			float _outerRadius, float _maxAttractionForce) {
+		this(_pos, _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+		id = _id;
+	}
+
+	public boolean isID(String _id){
+		return (_id.equals(id))? true: false;
+	}
+	
+	public void delete(){
+		myRenderer.remove(myInnerModel);
+		myRenderer.remove(myOuterModel);
 	}
 
 	private void setupRenderer() {

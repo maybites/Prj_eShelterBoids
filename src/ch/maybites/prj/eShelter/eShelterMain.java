@@ -50,17 +50,20 @@ public class eShelterMain extends PApplet implements OSCListener {
 	GestaltPlugIn gestalt;
 
 	private FPSCounter myFPSCounter;
+	
+	private int oscID;
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 1000; // amount of boids to start the program with
+	int initBoidNum = 1; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
 
 	public void setup() {
-		size(1200, 300, OPENGL);
+		size(1200, 600, OPENGL);
 		System.out.println("gotscha");
+		oscID = 1;
 
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
@@ -70,13 +73,14 @@ public class eShelterMain extends PApplet implements OSCListener {
 				new OSCMessage("/testtest"));
 
 		GlobalPreferences.getInstance().setDataPath(this.dataPath(""));
+		GlobalPreferences.getInstance().setLocalOSCID(oscID);
 
 		Canvas.setup(this);
 		gestalt = Canvas.getInstance().getPlugin();
 		gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
-		gestalt.camera().position().set(0f, 0f, -700f);
-		gestalt.camera().lookat().set(0f, 0f, 100f);
-		gestalt.camera().fovy = 78.0f;
+		gestalt.camera().position().set(0f, -160f, 940f);
+		gestalt.camera().lookat().set(0f, -41f, 0f);
+		gestalt.camera().fovy = 91.0f;
 		println("fovy: " + gestalt.camera().fovy);
 
 		/* setup light */
@@ -244,32 +248,32 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	public void acceptMessage(java.util.Date time, OSCMessage _message) {
 		try {
-			if (_message.getAddress().equals("/simulation/light/intensity"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/light/intensity"))
 				setLightIntensity(((Float) (_message.getArguments()[0])).floatValue());
-			if (_message.getAddress().equals("/simulation/camera/fovy"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/camera/fovy"))
 				setCameraFovy(((Float) (_message.getArguments()[0])).floatValue());
-			if (_message.getAddress().equals("/simulation/camera/setlookat"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/camera/setlookat"))
 				setCameraLookAt(((Integer) (_message.getArguments()[0])).intValue());
-			if (_message.getAddress().equals("/simulation/light/enable"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/light/enable"))
 				setLightEnable(((Integer) (_message.getArguments()[0])).intValue());
-			if (_message.getAddress().equals("/simulation/fpscounter/show"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/fpscounter/show"))
 				setShowFPSCounter(((Integer) (_message.getArguments()[0])).intValue());
-			if (_message.getAddress().equals("/simulation/camera/position"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/camera/position"))
 				setCameraPosition(
 						((Float) (_message.getArguments()[0])).floatValue(),
 						((Float) (_message.getArguments()[1])).floatValue(),
 						((Float) (_message.getArguments()[2])).floatValue());
-			if (_message.getAddress().equals("/simulation/light/position"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/light/position"))
 				setLightPosition(
 						((Float) (_message.getArguments()[0])).floatValue(),
 						((Float) (_message.getArguments()[1])).floatValue(),
 						((Float) (_message.getArguments()[2])).floatValue());
-			if (_message.getAddress().equals("/simulation/light/color"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/light/color"))
 				setLightColor(
 						((Float) (_message.getArguments()[0])).floatValue(),
 						((Float) (_message.getArguments()[1])).floatValue(),
 						((Float) (_message.getArguments()[2])).floatValue());
-			if (_message.getAddress().equals("/simulation/camera/lookat"))
+			if (_message.getAddress().equals("/simulation"+oscID+"/camera/lookat"))
 				setCameraLookAt(
 						((Float) (_message.getArguments()[0])).floatValue(),
 						((Float) (_message.getArguments()[1])).floatValue(),
@@ -286,15 +290,15 @@ public class eShelterMain extends PApplet implements OSCListener {
 	}
 
 	public void addToOSCListener(){
-		CommunicationHub.getInstance().addListener("/simulation/fpscounter/show", this);
-		CommunicationHub.getInstance().addListener("/simulation/light/enable", this);
-		CommunicationHub.getInstance().addListener("/simulation/light/color", this);
-		CommunicationHub.getInstance().addListener("/simulation/light/intensity", this);
-		CommunicationHub.getInstance().addListener("/simulation/light/position", this);
-		CommunicationHub.getInstance().addListener("/simulation/camera/position", this);
-		CommunicationHub.getInstance().addListener("/simulation/camera/setlookat", this);
-		CommunicationHub.getInstance().addListener("/simulation/camera/lookat", this);
-		CommunicationHub.getInstance().addListener("/simulation/camera/fovy", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/fpscounter/show", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/light/enable", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/light/color", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/light/intensity", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/light/position", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/camera/position", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/camera/setlookat", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/camera/lookat", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/camera/fovy", this);
 	}
 
 	static public void main(String args[]) {

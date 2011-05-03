@@ -11,6 +11,7 @@ import processing.core.*;
 public class EnergyField implements Magnet{
 	
 	Color color = new Color(0, 0, 255);
+	String id;
 
 	PVector pos;
 	PVector size;
@@ -34,8 +35,14 @@ public class EnergyField implements Magnet{
 		borderBack = (int) (pos.z + size.z / 2);
 
 		setupRenderer();
+		id = "default";
 	}
 
+	public EnergyField(String _id, PVector _pos, PVector _size, PVector _direction) {
+		this(_pos, _size, _direction);
+		id = _id;
+	}
+	
 	private void setupRenderer() {
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
 		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
@@ -48,6 +55,14 @@ public class EnergyField implements Magnet{
 
 	}
 
+	public boolean isID(String _id){
+		return (_id.equals(id))? true: false;
+	}
+	
+	public void delete(){
+		myRenderer.remove(myInnerModel);
+	}
+		
 	public void showOutlines(int i){
 		if(i == 1){
 			myRenderer.add(myInnerModel);

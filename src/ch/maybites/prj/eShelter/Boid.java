@@ -35,7 +35,7 @@ import gestalt.model.Model;
 import gestalt.model.ModelData;
 import gestalt.model.ModelLoaderOBJ;
 import gestalt.render.bin.AbstractBin;
-import gestalt.shape.Mesh;
+import gestalt.shape.*;
 
 import java.io.*;
 
@@ -46,12 +46,13 @@ public class Boid {
 	
 	public java.util.UUID uuid;
 	public int type;
+	public Color color;
 	
 	public PVector pos, vel, acc; // pos, velocity, and acceleration in
 											// a vector datatype
 	float neighborhoodRadius; // radius in which it looks for fellow boids
-	float maxSpeed = 4; // maximum magnitude for the velocity vector
-	float maxSteerForce = .1f; // maximum magnitude of the steering vector
+	float maxSpeed; // maximum magnitude for the velocity vector
+	float maxSteerForce; // maximum magnitude of the steering vector
 	float h; // hue
 	float sc = 3; // scale factor for the render of the boid
 	float flap = 0;
@@ -80,23 +81,30 @@ public class Boid {
 				new PVector(random.create(-1, 1), 
 				random.create(-1, 1),
 				random.create(1, -1)), 
-				100);
+				100, 2, 0.1f, 0);
 	}
 
 	Boid(PVector _pos, PVector inVel, float r) {
-		init(_pos, inVel, r);
+		init(_pos, inVel, r, 1, 0.1f, 0);
+	}
+	
+	Boid(PVector _pos, PVector inVel, float _radius, float _maxVelocity, float _maxAcceleration, int _type) {
+		init(_pos, inVel, _radius, _maxVelocity, _maxAcceleration, _type);
 	}
 
-	private void init(PVector _pos, PVector inVel, float r) {
-		type = 0;
+	private void init(PVector _pos, PVector inVel, float _radius, float _maxVelocity, float _maxAcceleration, int _type) {
 		pos = new PVector(_pos.x, _pos.y, _pos.z);
 		vel = new PVector(inVel.x, inVel.y, inVel.z);
 		acc = new PVector(0, 0, 0);
-		neighborhoodRadius = r;
+		neighborhoodRadius = _radius;
+		maxSpeed = _maxVelocity;
+		maxSteerForce = _maxAcceleration; // maximum magnitude of the steering vector
+
 		uuid = java.util.UUID.randomUUID();
 		
 		setupRenderer();
 		calcReset();
+		setType(_type);
 	}
 
 	private void setupRenderer() {
@@ -129,10 +137,40 @@ public class Boid {
 		// myModel.mesh().material().addPlugin(myTexture);
 
 		myModel.mesh().material().lit = true;
-		myModel.mesh().material().color.set(0.1f, .5f, 1f);
 
 		/* add model to renderer */
 		myRenderer.add(myModel);
+	}
+	
+	public void delete(){
+		myRenderer.remove(myModel);
+	}
+	
+	public void setType(int _type){
+		type = _type;
+		switch(type){
+		case 0:
+			sc = random.create(5, 8);
+			color = new Color(1f, 1f, 1f);
+			neighborhoodRadius = 150;
+			maxSpeed = 2f;
+			maxSteerForce = .1f;
+			break;
+		case 1:
+			sc = random.create(15, 19);
+			color = new Color(1f, 0f, 0f);
+			break;
+		case 2:
+			sc = random.create(10, 12);
+			color = new Color(1f, 0f, 1f);
+			break;
+		case 3:
+			sc = random.create(7, 10);
+			color = new Color(1f, 1f, 0f);
+			break;
+		}
+		myModel.mesh().scale(sc, sc, sc);
+		myModel.mesh().material().color = color;
 	}
 	
 	void calcReset() {
@@ -180,8 +218,8 @@ public class Boid {
 		mySteer.limit(maxSteerForce);
 
 		acc.add(PVector.mult(myAliSum, 1));
-		acc.add(PVector.mult(mySteer, 3));
-		acc.add(PVector.mult(mySepSum, 1));
+		acc.add(PVector.mult(mySteer, 2));
+		acc.add(PVector.mult(mySepSum, 3.f));
 	}
 	
 	void calcForceAcceleration(Magnet _magnet){

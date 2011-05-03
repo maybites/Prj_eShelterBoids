@@ -13,12 +13,14 @@ import gestalt.model.Model;
 import gestalt.model.ModelData;
 import gestalt.model.ModelLoaderOBJ;
 import gestalt.render.bin.AbstractBin;
+import gestalt.shape.Color;
 import gestalt.shape.Mesh;
 import processing.core.*;
 
 public class MagnetCylinder implements Magnet{
 
 	final String MODELNAME = "/model/magnet/cylinder.obj";
+	Color color = new Color(255, 0, 255);
 
 	public final static int LEVEL_ATTRACTION_LINEAR = 0;
 	public final static int INNER_ATTRACTION_LINEAR = 1;
@@ -30,6 +32,7 @@ public class MagnetCylinder implements Magnet{
 	float maxAttractionForce;
 
 	int attractionType;
+	String id;
 
 	PVector pos, pos2d;
 
@@ -47,7 +50,24 @@ public class MagnetCylinder implements Magnet{
 		pos = _pos;
 		pos2d = new PVector(pos.x, pos.z);
 		setupRenderer();
+		id = "default";
 	}
+	
+	public MagnetCylinder(String _id, PVector _pos, int _attractionType, float _innerRadius,
+			float _outerRadius, float _maxAttractionForce) {
+		this(_pos, _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+		id = _id;
+	}
+
+	public boolean isID(String _id){
+		return (_id.equals(id))? true: false;
+	}
+	
+	public void delete(){
+		myRenderer.remove(myInnerModel);
+		myRenderer.remove(myOuterModel);
+	}
+
 
 	private void setupRenderer() {
 		try {
@@ -92,7 +112,10 @@ public class MagnetCylinder implements Magnet{
 
 		myInnerModel.mesh().material().wireframe = true;
 		myOuterModel.mesh().material().wireframe = true;
-
+		
+		myInnerModel.mesh().material().color = color;
+		myOuterModel.mesh().material().color = color;
+		
 		myInnerModel.mesh().transform().translation.x = pos.x;
 		myInnerModel.mesh().transform().translation.y = pos.y;
 		myInnerModel.mesh().transform().translation.z = pos.z;

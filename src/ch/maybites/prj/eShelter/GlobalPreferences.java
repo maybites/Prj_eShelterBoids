@@ -22,10 +22,13 @@ package ch.maybites.prj.eShelter;
 
 public class GlobalPreferences {
 
-	// methods and attributes for Singleton pattern
-	private GlobalPreferences() {}
-
 	static private GlobalPreferences _instance;
+	private int localOSCID;
+	
+	// methods and attributes for Singleton pattern
+	private GlobalPreferences() {
+		localOSCID = 0;
+	}
 
 	static public GlobalPreferences getInstance() {
 		if (_instance == null) {
@@ -36,8 +39,6 @@ public class GlobalPreferences {
 		}
 		return _instance;
 	}
-
-	private String _latency = "10.0";
 	
 	private String _dataPath = "";
 	
@@ -57,19 +58,11 @@ public class GlobalPreferences {
 		return _dataPath + "/resource" + addPath;
 	}
 	
-	public void setLatency(String millis){	
-		_latency = millis;
+	public void setLocalOSCID(int sim){
+		localOSCID = sim;
 	}
 
-	public void setLatency(float millis){	
-		_latency = "" + millis;
-	}
-	
-	public float getLatencyFloat(){
-		return (new Float(_latency)).floatValue();
-	}
-	
-	public String getLatencyString(){
-		return _latency;
+	public int getOSC_ID(){
+		return localOSCID;
 	}
 }
