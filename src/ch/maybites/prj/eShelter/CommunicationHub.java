@@ -86,5 +86,33 @@ public class CommunicationHub {
 			Debugger.getInstance().fatalMessage(this.getClass(), "Cant send OSC Message: "+ e.getMessage());
 		}
 	}
+
+	void sendMirrorOSCMessage(Boid b){
+		OSCMessage msg = new OSCMessage("/sound1/flock/mirror");
+		msg.addArgument(new Integer(b.type));
+		msg.addArgument(new Float(b.pos.x));
+		msg.addArgument(new Float(b.pos.y));
+		msg.addArgument(new Float(b.pos.z));
+		CommunicationHub.getInstance().sendOscMessage(msg);		
+	}
+
+	/*
+	 *  /sound/flock/collision <(int)type> <(float)posX> <(float)posY> <(float)posZ>
+	 */
+	void sendCollisionOSCMessage(Boid b){
+		OSCMessage msg = new OSCMessage("/sound1/flock/collision");
+		msg.addArgument(new Integer(b.type));
+		msg.addArgument(new Float(b.pos.x));
+		msg.addArgument(new Float(b.pos.y));
+		msg.addArgument(new Float(b.pos.z));
+		CommunicationHub.getInstance().sendOscMessage(msg);		
+	}
 	
+	void sendWarpOSCMessage(Boid b){
+		OSCMessage msg = new OSCMessage("/sound1/flock/warp");
+		msg.addArgument(new Integer(b.type));
+		msg.addArgument(new Float(b.pos.x));
+		CommunicationHub.getInstance().sendOscMessage(msg);		
+	}
+
 }

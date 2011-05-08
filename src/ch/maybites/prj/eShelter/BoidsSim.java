@@ -76,15 +76,14 @@ public class BoidsSim implements OSCListener{
 		magnets = new ArrayList<Magnet>();
 		messageQueue = new MessageQueue();
 		h = ih;
-		for (int i = 0; i < maxSize; i++)
-			add();
+		addBoids(maxSize, 0);
 		
 		setupRenderer();
 		
 		oscID = GlobalPreferences.getInstance().getOSC_ID();
 		
 		//magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
-		//magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
+		magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
 		//magnets.add(new MagnetCylinder(new PVector(width / 4, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
 		//magnets.add(new MagnetCylinder(new PVector(-width / 2, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
 		//magnets.add(new MagnetCylinder(new PVector(-width / 4, 0, 500), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
@@ -126,8 +125,10 @@ public class BoidsSim implements OSCListener{
 		myRenderer.remove(myInnerModel);
 	}
 
-	void add() {
-		boids.add(new Boid(new PVector(0, 0, 0)));
+	void addBoids(int _number, int _type) {
+		for (int i = 0; i < _number; i++){
+			boids.add(new Boid(new PVector(0, 0, 0), _type));
+		}
 	}
 
 	void addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ, float _radius, float _maxVel, float _maxAcc) {
@@ -154,6 +155,12 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 	
+	void typeRandomizeAllBoids(){
+		for (int j = boids.size() - 1; j >= 1; j--){
+			boids.get(j).applyRandomType();
+		}
+	}
+	
 	void addMagnetCylinder(String _id, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce){
 		magnets.add(new MagnetCylinder(new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce));
@@ -173,25 +180,51 @@ public class BoidsSim implements OSCListener{
 		for (int i = 0; i < boids.size(); i++){
 			// create a temporary boid
 			Boid tempBoid = (Boid) boids.get(i);
-			for (int j = i + 1; j < boids.size(); j++){//  and iterate through the rest of the boids
+			for (int j = 0; j < boids.size(); j++){//  and iterate through the rest of the boids
 				tempBoid.calcFlock(boids.get(j));
 			}
 		}
 	}
 
 	void checkBounds(Boid boid) {
-		if (boid.pos.x > borderLeft)
-			boid.pos.x = borderRight;
-		if (boid.pos.x < borderRight)
-			boid.pos.x = borderLeft;
-		if (boid.pos.y > borderTop)
-			boid.pos.y = borderBottom;
-		if (boid.pos.y < borderBottom)
-			boid.pos.y = borderTop;
+		if (boid.pos.x > borderLeft){
+			if(boid.vel.x > 0){
+				sendMirrorOSCMessage(boid);
+				boid.vel.x *= -2.;
+			}
+			//boid.pos.x = borderRight;
+		}
+		if (boid.pos.x < borderRight){
+			if(boid.vel.x < 0){
+				sendMirrorOSCMessage(boid);
+				boid.vel.x *= -2.;
+			}
+			//boid.pos.x = borderLeft;
+		}
+		if (boid.pos.y > borderTop){
+			if(boid.vel.y > 0)
+				boid.vel.y *= -2.;
+			//boid.pos.y = borderBottom;
+		}
+		if (boid.pos.y < borderBottom){
+			if(boid.vel.y < 0)
+				boid.vel.y *= -2.;
+			//boid.pos.y = borderTop;
+		}
 		if (boid.pos.z > borderBack)
 			boid.pos.z = borderFront;
-		if (boid.pos.z < borderFront)
+		if (boid.pos.z < borderFront){
+			sendWarpOSCMessage(boid);
 			boid.pos.z = borderBack;
+		}
+	}
+	
+	void sendWarpOSCMessage(Boid b){
+		CommunicationHub.getInstance().sendWarpOSCMessage(b);		
+	}
+	
+	void sendMirrorOSCMessage(Boid b){
+		CommunicationHub.getInstance().sendMirrorOSCMessage(b);		
 	}
 
 	void changeBoidParams(float _neighborhoodRadius, float _maxSpeed, float _maxSteerForce) {
@@ -247,6 +280,7 @@ public class BoidsSim implements OSCListener{
 	
 	/**
 	 *  /simulation/manager/magnet/remove/all 
+	 *  /simulation"+oscID+"/manager/boid/addswarm <(int)number> <(int)type>
 	 */
 	
 	/**
@@ -259,8 +293,13 @@ public class BoidsSim implements OSCListener{
 			try{
 				if(_message.getAddress().equals("/simulation"+oscID+"/manager/magnet/remove/all"))
 					removeAllMagnets();
+				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/randomize/all"))
+					typeRandomizeAllBoids();
 				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/remove/all"))
 					removeAllBoids();
+				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/addswarm"))
+					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
+							((Integer)(_message.getArguments()[1])).intValue());
 				if(_message.getAddress().equals("/simulation"+oscID+"/manager/showoutlines"))
 					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
 				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/params"))
@@ -326,6 +365,7 @@ public class BoidsSim implements OSCListener{
 	 * after instantiation is done.
 	 */
 	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/randomize/all", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/remove/all", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/params", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/showoutlines", this);
@@ -334,5 +374,6 @@ public class BoidsSim implements OSCListener{
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/add/sphere", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/add/energyfield", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/add", this);
+		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/addswarm", this);
 	}
 }

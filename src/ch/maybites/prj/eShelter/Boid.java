@@ -31,35 +31,46 @@ import ch.maybites.prj.eShelter.Canvas;
 import ch.maybites.prj.eShelter.magnet.Magnet;
 import ch.maybites.tools.*;
 import gestalt.Gestalt;
-import gestalt.model.Model;
-import gestalt.model.ModelData;
-import gestalt.model.ModelLoaderOBJ;
+import gestalt.model.*;
+import gestalt.texture.*;
+import gestalt.texture.bitmap.IntegerBitmap;
 import gestalt.render.bin.AbstractBin;
 import gestalt.shape.*;
+import gestalt.shape.material.TexturePlugin;
 
 import java.io.*;
 
 import java.util.*;
+
+import com.illposed.osc.OSCMessage;
 
 public class Boid {
 	// fields
 	
 	public java.util.UUID uuid;
 	public int type;
-	public Color color;
+	Bitmap texColor;
+	TexturePlugin myTexture;
 	
 	public PVector pos, vel, acc; // pos, velocity, and acceleration in
 											// a vector datatype
 	float neighborhoodRadius; // radius in which it looks for fellow boids
 	float maxSpeed; // maximum magnitude for the velocity vector
 	float maxSteerForce; // maximum magnitude of the steering vector
+	private float repulseDistance;
+	private float repulseDistanceSqr;
+	float alignementFactor = 2.0f;
+	float coherenceFactor = 3.0f;
+	float repulseFactor = 1.0f;
+
 	float h; // hue
 	float sc = 3; // scale factor for the render of the boid
 	float flap = 0;
 	float t = 0;
+	int numberOfTypes = 4;
 
 	// final String MODELNAME = "/model/singleE_lowPoly.obj";
-	final String MODELNAME = "/model/singleE_lowPolyVolume.obj";
+	final String MODELNAME = "/model/singleE_lowPoly1.obj";
 	// final String MODELNAME = "/model/weirdobject.obj";
 
 	MayRandom random = new MayRandom();
@@ -82,10 +93,14 @@ public class Boid {
 				random.create(-1, 1),
 				random.create(1, -1)), 
 				100, 2, 0.1f, 0);
+		applyTypeCharacteristics();
 	}
 
-	Boid(PVector _pos, PVector inVel, float r) {
-		init(_pos, inVel, r, 1, 0.1f, 0);
+	Boid(PVector _pos, int _type) {
+		init(_pos, new PVector(random.create(-1, 1), 
+				random.create(-1, 1),
+				random.create(1, -1)), 100, 1, 0.1f, _type);
+		applyTypeCharacteristics();
 	}
 	
 	Boid(PVector _pos, PVector inVel, float _radius, float _maxVelocity, float _maxAcceleration, int _type) {
@@ -99,12 +114,20 @@ public class Boid {
 		neighborhoodRadius = _radius;
 		maxSpeed = _maxVelocity;
 		maxSteerForce = _maxAcceleration; // maximum magnitude of the steering vector
-
+		setRepulseDistance(10);
+		
+		myRepulse = new PVector();
+		
 		uuid = java.util.UUID.randomUUID();
 		
 		setupRenderer();
 		calcReset();
 		setType(_type);
+	}
+
+	public void setRepulseDistance(float _repulseDistance){
+		repulseDistance = _repulseDistance;
+		repulseDistanceSqr = repulseDistance * repulseDistance;
 	}
 
 	private void setupRenderer() {
@@ -130,11 +153,12 @@ public class Boid {
 		myModel = Canvas.getInstance().getPlugin().drawablefactory()
 				.model(myModelData, myModelMesh);
 
-		// TexturePlugin myTexture =
-		// Canvas.getInstance().getPlugin().drawablefactory().texture();
+		myTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
+		texColor = IntegerBitmap.getDefaultImageBitmap(1, 1); 
+		setColor(new Color(1, 1, 1));
 		// myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
-		// myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
-		// myModel.mesh().material().addPlugin(myTexture);
+		myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_REPEAT);
+		myModel.mesh().material().addPlugin(myTexture);
 
 		myModel.mesh().material().lit = true;
 
@@ -142,35 +166,84 @@ public class Boid {
 		myRenderer.add(myModel);
 	}
 	
+	public void setColor(Color _c){
+		texColor.setPixel(0, 0, new Color(_c));
+		myTexture.load(texColor);
+	}
+	
 	public void delete(){
 		myRenderer.remove(myModel);
 	}
 	
+	public void applyRandomType(){
+		setType((int)random.create(0, numberOfTypes));
+		applyTypeCharacteristics();
+	}
+	
 	public void setType(int _type){
 		type = _type;
+		Color color = new Color(1f, 1f, 1f);
 		switch(type){
 		case 0:
-			sc = random.create(5, 8);
 			color = new Color(1f, 1f, 1f);
-			neighborhoodRadius = 150;
-			maxSpeed = 2f;
-			maxSteerForce = .1f;
 			break;
 		case 1:
-			sc = random.create(15, 19);
 			color = new Color(1f, 0f, 0f);
 			break;
 		case 2:
-			sc = random.create(10, 12);
 			color = new Color(1f, 0f, 1f);
 			break;
 		case 3:
+			color = new Color(0f, 0f, 1f);
+			break;
+		}
+		setColor(color);
+	}
+	
+	public void applyTypeCharacteristics(){
+		switch(type){
+		case 0:
+			sc = random.create(5, 8);
+			neighborhoodRadius = 150;
+			maxSpeed = 2f;
+			maxSteerForce = .1f;
+			alignementFactor = 2.0f;
+			coherenceFactor = 3.0f;
+			repulseFactor = 1.0f;
+			setRepulseDistance(15);
+			break;
+		case 1:
+			sc = random.create(10, 12);
+			neighborhoodRadius = 150;
+			maxSpeed = 1f;
+			maxSteerForce = .1f;
+			alignementFactor = 2.0f;
+			coherenceFactor = 3.0f;
+			repulseFactor = 1.0f;
+			setRepulseDistance(20);
+			break;
+		case 2:
+			sc = random.create(2, 3);
+			neighborhoodRadius = 70;
+			maxSpeed = 5f;
+			maxSteerForce = .1f;
+			alignementFactor = 1.0f;
+			coherenceFactor = 3.0f;
+			repulseFactor = 1.0f;
+			setRepulseDistance(12);
+			break;
+		case 3:
 			sc = random.create(7, 10);
-			color = new Color(1f, 1f, 0f);
+			neighborhoodRadius = 100;
+			maxSpeed = 4f;
+			maxSteerForce = .2f;
+			alignementFactor = 2.0f;
+			coherenceFactor = 4.0f;
+			repulseFactor = 1.0f;
+			setRepulseDistance(12);
 			break;
 		}
 		myModel.mesh().scale(sc, sc, sc);
-		myModel.mesh().material().color = color;
 	}
 	
 	void calcReset() {
@@ -185,29 +258,33 @@ public class Boid {
 
 	void calcFlock(Boid b) {
 		float d = PVector.dist(pos, b.pos);
-		if (d > 0 && d <= neighborhoodRadius) {
-			// alignment
-			myAliSum.add(b.vel);
-			b.myAliSum.add(vel); // mirror on the other boid
+		if (d > 1 && d <= neighborhoodRadius) {
+			if(type == b.type){
+				// alignment
+				myAliSum.add(b.vel);
 
-			// cohesion
-			myCohSum.add(b.pos);
-			b.myCohSum.add(pos); // mirror on the other boid
+				// cohesion
+				myCohSum.add(b.pos);
+			} else {
+				if(d < repulseDistance)
+					sendCollisionOSCMessage(b);
+			}
 
 			// separation
+			float repulseForce = d * d / repulseDistanceSqr;
 			myRepulse = PVector.sub(pos, b.pos);
 			myRepulse.normalize();
-			myRepulse.div(d);
+			myRepulse.div(repulseForce);
 			mySepSum.add(myRepulse);
-			
-			myRepulse.mult(-1.f); // mirror on the other boid
-			b.mySepSum.add(myRepulse);
 
 			flockcounter++;
-			b.flockcounter++; // mirror on the other boid
 		}
 	}
-
+	
+	void sendCollisionOSCMessage(Boid b){
+		CommunicationHub.getInstance().sendCollisionOSCMessage(this);		
+	}
+	
 	void calcFlockAcceleration() {
 		if (flockcounter > 0) {
 			myAliSum.div((float) flockcounter);
@@ -217,9 +294,9 @@ public class Boid {
 		mySteer = PVector.sub(myCohSum, pos);
 		mySteer.limit(maxSteerForce);
 
-		acc.add(PVector.mult(myAliSum, 1));
-		acc.add(PVector.mult(mySteer, 2));
-		acc.add(PVector.mult(mySepSum, 3.f));
+		acc.add(PVector.mult(myAliSum, alignementFactor));
+		acc.add(PVector.mult(mySteer, coherenceFactor));
+		acc.add(PVector.mult(mySepSum, repulseFactor));
 	}
 	
 	void calcForceAcceleration(Magnet _magnet){

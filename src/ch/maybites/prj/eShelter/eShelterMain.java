@@ -55,7 +55,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 1; // amount of boids to start the program with
+	int initBoidNum = 200; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
@@ -68,7 +68,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
 
-		CommunicationHub.setup(9030, 9040, "10.0.0.255");
+		CommunicationHub.setup(9030, 9040, "127.0.0.1");
 		CommunicationHub.getInstance().sendOscMessage(
 				new OSCMessage("/testtest"));
 

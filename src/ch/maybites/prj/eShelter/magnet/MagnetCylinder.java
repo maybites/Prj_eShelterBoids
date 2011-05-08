@@ -127,6 +127,7 @@ public class MagnetCylinder implements Magnet{
 		myOuterModel.mesh().transform().translation.z = pos.z;
 
 		myOuterModel.mesh().scale(outerRadius, 300, outerRadius);
+		
 
 	}
 
