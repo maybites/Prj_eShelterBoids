@@ -18,7 +18,7 @@ import processing.core.*;
 
 public class MagnetSphere implements Magnet{
 
-	final String MODELNAME = "/model/magnet/sphere.obj";
+	final String MODELNAME = "model/magnet/sphere.obj";
 
 	public final static int LEVEL_ATTRACTION_LINEAR = 0;
 	public final static int INNER_ATTRACTION_LINEAR = 1;

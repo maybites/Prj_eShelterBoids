@@ -20,6 +20,12 @@
 
 package ch.maybites.prj.eShelter;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+
 public class GlobalPreferences {
 
 	static private GlobalPreferences _instance;
@@ -41,23 +47,48 @@ public class GlobalPreferences {
 	}
 	
 	private String _dataPath = "";
-	
-	public void setDataPath(String path){
-		_dataPath = path;
-	}
-	
 	/*
 	 * returns the absolute path. the specified addPath, which is relative to the 
 	 * data folder, is being added to the absolute path of the data folder
+	 */
+
+	/**
+	 * Sets the actual absolute data path. needs an "/" at the end of the path;
+	 * @param path
+	 */
+	public void setDataPath(String path){
+		_dataPath = path;
+	}
+
+	/**
+	 * 
+	 * @param addPath 	the specified addPath, starts without "/", which is relative to the 
+	 * data folder, is being added to the absolute path of the data folder
+	 * @return	the absolute path
 	 */
 	public String getAbsDataPath(String addPath){
 		return _dataPath + addPath;
 	}
 	
 	public String getAbsResourcePath(String addPath){
-		return _dataPath + "/resource" + addPath;
+		return _dataPath + "resource/" + addPath;
 	}
-	
+
+    public InputStream getStream(String filename)
+    {
+		try {
+	        URL url;
+			url = new URL("file://" +_dataPath+filename);
+	        return url.openStream();
+		} catch (MalformedURLException e) {
+	        Debugger.getInstance().fatalMessage(this.getClass(), "### ERROR @getStream / "+ _dataPath + filename + " / " + e.getMessage());
+		} catch (IOException e) {
+	        Debugger.getInstance().fatalMessage(this.getClass(), "### ERROR @getStream / "+ _dataPath + filename + " / " + e.getMessage());
+		}
+        return null;
+    }
+
+    
 	public void setLocalOSCID(int sim){
 		localOSCID = sim;
 	}

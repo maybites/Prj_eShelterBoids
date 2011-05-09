@@ -19,7 +19,7 @@ import processing.core.*;
 
 public class MagnetCylinder implements Magnet{
 
-	final String MODELNAME = "/model/magnet/cylinder.obj";
+	final String MODELNAME = "model/magnet/cylinder.obj";
 	Color color = new Color(255, 0, 255);
 
 	public final static int LEVEL_ATTRACTION_LINEAR = 0;

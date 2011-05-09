@@ -28,9 +28,21 @@ package ch.maybites.prj.eShelter;
 
 import gestalt.Gestalt;
 import gestalt.shape.*;
+import gestalt.shape.material.MaterialPlugin;
+import gestalt.shape.material.TexturePlugin;
+import gestalt.texture.Bitmaps;
+import gestalt.candidates.glsl.ShaderManager;
+import gestalt.candidates.glsl.ShaderProgram;
+import gestalt.context.GLContext;
+import gestalt.model.ModelData;
+import gestalt.model.ModelLoaderOBJ;
 import gestalt.render.bin.AbstractBin;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.*;
+
+import javax.media.opengl.GL;
 
 import ch.maybites.prj.eShelter.magnet.*;
 import processing.core.*;
@@ -42,6 +54,11 @@ public class BoidsSim implements OSCListener{
 	private ArrayList<Magnet> magnets; // will hold the magnets in this BoidList
 	private MessageQueue messageQueue;
 	
+    private ShaderManager _myShaderManager;
+    private ShaderProgram _myShaderProgram;
+    TexturePlugin myReflectionTexture;
+    TexturePlugin myRefractionTexture;
+    
 	float h; // for color
 	
 	PVector pos;
@@ -76,10 +93,10 @@ public class BoidsSim implements OSCListener{
 		magnets = new ArrayList<Magnet>();
 		messageQueue = new MessageQueue();
 		h = ih;
-		addBoids(maxSize, 0);
-		
 		setupRenderer();
-		
+		addBoids(maxSize, 0);
+		//addBoids(2, 4);
+				
 		oscID = GlobalPreferences.getInstance().getOSC_ID();
 		
 		//magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
@@ -95,13 +112,18 @@ public class BoidsSim implements OSCListener{
 	private void setupRenderer() {
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
 
-		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
+        /* create shadermanager and a shaderprogram */
+        _myShaderManager = Canvas.getInstance().getPlugin().drawablefactory().extensions().shadermanager();
+        _myShaderProgram = _myShaderManager.createShaderProgram();
+        _myShaderManager.attachVertexShader(_myShaderProgram,GlobalPreferences.getInstance().getStream("shader/RefractionReflectionShader.vs"));
+        _myShaderManager.attachFragmentShader(_myShaderProgram, GlobalPreferences.getInstance().getStream("shader/RefractionReflectionShader.fs"));
+        Canvas.getInstance().getPlugin().bin(Gestalt.BIN_FRAME_SETUP).add(_myShaderManager);
 
-		// TexturePlugin myTexture =
-		// Canvas.getInstance().getPlugin().drawablefactory().texture();
-		// myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
-		// myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
-		// myModel.mesh().material().addPlugin(myTexture);
+        myReflectionTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
+        myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/sky-reflection.png")));
+        myReflectionTexture.setTextureUnit(GL.GL_TEXTURE0);
+
+		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
 
 		myInnerModel.material().wireframe = true;
 
@@ -127,16 +149,19 @@ public class BoidsSim implements OSCListener{
 
 	void addBoids(int _number, int _type) {
 		for (int i = 0; i < _number; i++){
-			boids.add(new Boid(new PVector(0, 0, 0), _type));
+			Boid newBoid = new Boid(new PVector(0, 0, 0), _type);
+			addBoid(newBoid);
 		}
 	}
 
 	void addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ, float _radius, float _maxVel, float _maxAcc) {
-		boids.add(new Boid(new PVector(posX, posY, posZ), new PVector(velX, velY, velZ), _radius, _maxVel, _maxAcc, _type));
+		Boid newBoid = new Boid(new PVector(posX, posY, posZ), new PVector(velX, velY, velZ), _radius, _maxVel, _maxAcc, _type);
+		addBoid(newBoid);
 	}
 
 	void addBoid(Boid b) {
 		boids.add(b);
+		b.setShader(new ShaderMaterial(), myReflectionTexture);
 	}
 
 	void addMagnet(Magnet m) {
@@ -157,7 +182,7 @@ public class BoidsSim implements OSCListener{
 	
 	void typeRandomizeAllBoids(){
 		for (int j = boids.size() - 1; j >= 1; j--){
-			boids.get(j).applyRandomType();
+			boids.get(j).applyRandomSwarm();
 		}
 	}
 	
@@ -376,4 +401,31 @@ public class BoidsSim implements OSCListener{
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/add", this);
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/addswarm", this);
 	}
+
+    public class ShaderMaterial
+    implements MaterialPlugin {
+
+	    public void begin(GLContext theRenderContext, Material theParent) {
+	        /* enable shader */
+	        _myShaderManager.enable(_myShaderProgram);
+	
+	        /* set uniform variables in shader */
+	        _myShaderManager.setUniform(_myShaderProgram, "LightPos", 0.0f, 0.0f, 4.0f);
+	        _myShaderManager.setUniform(_myShaderProgram, "BaseColor", 1.0f, 1.0f, 1.0f);
+	        _myShaderManager.setUniform(_myShaderProgram, "EnvMap", 0);
+	        _myShaderManager.setUniform(_myShaderProgram, "RefractionMap", 1);
+	        _myShaderManager.setUniform(_myShaderProgram, "textureWidth", 512.0f);
+	        _myShaderManager.setUniform(_myShaderProgram, "textureHeight", 512.0f);
+	
+	        _myShaderManager.setUniform(_myShaderProgram, "Depth", 0f);
+	        _myShaderManager.setUniform(_myShaderProgram, "MixRatio", 0.5f);
+	    }
+	
+	
+	    public void end(GLContext theRenderContext, Material theParent) {
+	        _myShaderManager.disable();
+	    }
+	}
+
+
 }

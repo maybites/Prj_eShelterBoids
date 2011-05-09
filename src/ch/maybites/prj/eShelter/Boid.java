@@ -31,6 +31,7 @@ import ch.maybites.prj.eShelter.Canvas;
 import ch.maybites.prj.eShelter.magnet.Magnet;
 import ch.maybites.tools.*;
 import gestalt.Gestalt;
+import ch.maybites.prj.eShelter.BoidsSim.ShaderMaterial;
 import gestalt.model.*;
 import gestalt.texture.*;
 import gestalt.texture.bitmap.IntegerBitmap;
@@ -42,15 +43,21 @@ import java.io.*;
 
 import java.util.*;
 
+import javax.media.opengl.GL;
+
 import com.illposed.osc.OSCMessage;
 
 public class Boid {
 	// fields
 	
 	public java.util.UUID uuid;
-	public int type;
+	public int swarmID;
 	Bitmap texColor;
+	Bitmap refrColor;
+	Bitmap reflColor;
 	TexturePlugin myTexture;
+	TexturePlugin myRefractionTexture;
+	TexturePlugin myReflectionTexture;
 	
 	public PVector pos, vel, acc; // pos, velocity, and acceleration in
 											// a vector datatype
@@ -67,11 +74,11 @@ public class Boid {
 	float sc = 3; // scale factor for the render of the boid
 	float flap = 0;
 	float t = 0;
-	int numberOfTypes = 4;
+	int numberOfSwarms = 4;
 
-	// final String MODELNAME = "/model/singleE_lowPoly.obj";
-	final String MODELNAME = "/model/singleE_lowPoly1.obj";
-	// final String MODELNAME = "/model/weirdobject.obj";
+	// final String MODELNAME = "model/singleE_lowPoly.obj";
+	final String MODELNAME = "model/singleE_lowPoly1.obj";
+	// final String MODELNAME = "model/weirdobject.obj";
 
 	MayRandom random = new MayRandom();
 
@@ -93,14 +100,14 @@ public class Boid {
 				random.create(-1, 1),
 				random.create(1, -1)), 
 				100, 2, 0.1f, 0);
-		applyTypeCharacteristics();
+		applySwarmCharacteristics();
 	}
 
 	Boid(PVector _pos, int _type) {
 		init(_pos, new PVector(random.create(-1, 1), 
 				random.create(-1, 1),
 				random.create(1, -1)), 100, 1, 0.1f, _type);
-		applyTypeCharacteristics();
+		applySwarmCharacteristics();
 	}
 	
 	Boid(PVector _pos, PVector inVel, float _radius, float _maxVelocity, float _maxAcceleration, int _type) {
@@ -122,7 +129,7 @@ public class Boid {
 		
 		setupRenderer();
 		calcReset();
-		setType(_type);
+		setSwarm(_type);
 	}
 
 	public void setRepulseDistance(float _repulseDistance){
@@ -130,6 +137,20 @@ public class Boid {
 		repulseDistanceSqr = repulseDistance * repulseDistance;
 	}
 
+	public void setShader(ShaderMaterial shaderMaterial, TexturePlugin myReflectionTexture){
+ 		
+        /* create textures */
+		myRefractionTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
+		myRefractionTexture.load(texColor);
+        myRefractionTexture.setTextureUnit(GL.GL_TEXTURE1);
+
+        myModel.mesh().material().plugins().clear();
+        
+        myModel.mesh().material().addPlugin(myRefractionTexture);
+        myModel.mesh().material().addPlugin(myReflectionTexture);
+        myModel.mesh().material().addPlugin(shaderMaterial);
+	}
+	
 	private void setupRenderer() {
 		try {
 			FileInputStream file = new FileInputStream(GlobalPreferences
@@ -175,15 +196,15 @@ public class Boid {
 		myRenderer.remove(myModel);
 	}
 	
-	public void applyRandomType(){
-		setType((int)random.create(0, numberOfTypes));
-		applyTypeCharacteristics();
+	public void applyRandomSwarm(){
+		setSwarm((int)random.create(0, numberOfSwarms));
+		applySwarmCharacteristics();
 	}
 	
-	public void setType(int _type){
-		type = _type;
+	public void setSwarm(int _swarm){
+		swarmID = _swarm;
 		Color color = new Color(1f, 1f, 1f);
-		switch(type){
+		switch(swarmID){
 		case 0:
 			color = new Color(1f, 1f, 1f);
 			break;
@@ -200,8 +221,8 @@ public class Boid {
 		setColor(color);
 	}
 	
-	public void applyTypeCharacteristics(){
-		switch(type){
+	public void applySwarmCharacteristics(){
+		switch(swarmID){
 		case 0:
 			sc = random.create(5, 8);
 			neighborhoodRadius = 150;
@@ -242,6 +263,16 @@ public class Boid {
 			repulseFactor = 1.0f;
 			setRepulseDistance(12);
 			break;
+		case 4:
+			sc = random.create(100, 100);
+			neighborhoodRadius = 100;
+			maxSpeed = 0.1f;
+			maxSteerForce = .01f;
+			alignementFactor = 2.0f;
+			coherenceFactor = 4.0f;
+			repulseFactor = 1.0f;
+			setRepulseDistance(10);
+			break;
 		}
 		myModel.mesh().scale(sc, sc, sc);
 	}
@@ -259,22 +290,24 @@ public class Boid {
 	void calcFlock(Boid b) {
 		float d = PVector.dist(pos, b.pos);
 		if (d > 1 && d <= neighborhoodRadius) {
-			if(type == b.type){
+			// separation
+			float repulseForce = d * d / repulseDistanceSqr;
+			myRepulse = PVector.sub(pos, b.pos);
+			myRepulse.normalize();
+			myRepulse.div(repulseForce);
+
+			if(swarmID == b.swarmID){
 				// alignment
 				myAliSum.add(b.vel);
 
 				// cohesion
 				myCohSum.add(b.pos);
 			} else {
+				myRepulse.mult(2f); // repulse of an boid of different swarm is stronger.
 				if(d < repulseDistance)
 					sendCollisionOSCMessage(b);
 			}
 
-			// separation
-			float repulseForce = d * d / repulseDistanceSqr;
-			myRepulse = PVector.sub(pos, b.pos);
-			myRepulse.normalize();
-			myRepulse.div(repulseForce);
 			mySepSum.add(myRepulse);
 
 			flockcounter++;
