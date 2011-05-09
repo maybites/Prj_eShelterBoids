@@ -20,20 +20,31 @@
 
 package ch.maybites.prj.eShelter;
 
+import gestalt.model.ModelLoaderOBJ;
+
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.*;
 
 public class GlobalPreferences {
 
+	public static final String SIM_ID 			= "SIM_ID";
+	public static final String OSC_LISTENPORT 	= "OSC_LISTENPORT";
+	public static final String OSC_SENDPORT 	= "OSC_SENDPORT";
+	public static final String OSC_SENDADDRESS 	= "OSC_SENDADDRESS";
+	
 	static private GlobalPreferences _instance;
 	private int localOSCID;
+	private Properties props;
 	
 	// methods and attributes for Singleton pattern
 	private GlobalPreferences() {
 		localOSCID = 0;
+		props = new Properties();
 	}
 
 	static public GlobalPreferences getInstance() {
@@ -58,6 +69,15 @@ public class GlobalPreferences {
 	 */
 	public void setDataPath(String path){
 		_dataPath = path;
+		try {
+			FileInputStream file = new FileInputStream(path + "properties.txt");
+			props.load(file);
+			file.close();
+		} catch (IOException exp) {
+			Debugger.getInstance().errorMessage(this.getClass(),
+					"No Property File found: " + exp.getMessage());
+			;
+		}
 	}
 
 	/**
@@ -78,7 +98,7 @@ public class GlobalPreferences {
     {
 		try {
 	        URL url;
-			url = new URL("file://" +_dataPath+filename);
+			url = new URL("file:///" +_dataPath+filename);
 	        return url.openStream();
 		} catch (MalformedURLException e) {
 	        Debugger.getInstance().fatalMessage(this.getClass(), "### ERROR @getStream / "+ _dataPath + filename + " / " + e.getMessage());
@@ -88,7 +108,27 @@ public class GlobalPreferences {
         return null;
     }
 
+    public String getStringProperty(String key, String _default){
+    	if(props.containsKey(key))
+    		return props.getProperty(key, _default);
+		Debugger.getInstance().errorMessage(this.getClass(),"No Property found for key: " + key + "... returning default value: "+_default);
+		return _default;
+    }
+
+    public int getIntProperty(String key, int _default){
+    	if(props.containsKey(key))
+    		return Integer.parseInt(props.getProperty(key));
+		Debugger.getInstance().errorMessage(this.getClass(),"No Property found for key: " + key + "... returning default value: "+_default);
+		return _default;
+    }
     
+    public float getfloatProperty(String key, float _default){
+    	if(props.containsKey(key))
+    		return Float.parseFloat(props.getProperty(key));
+		Debugger.getInstance().errorMessage(this.getClass(),"No Property found for key: " + key + "... returning default value: "+_default);
+		return _default;
+    }
+
 	public void setLocalOSCID(int sim){
 		localOSCID = sim;
 	}

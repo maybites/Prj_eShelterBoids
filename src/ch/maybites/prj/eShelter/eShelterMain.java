@@ -62,18 +62,22 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	public void setup() {
 		size(1200, 600, OPENGL);
-		System.out.println("gotscha");
-		oscID = 1;
-
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
 
-		CommunicationHub.setup(9030, 9040, "127.0.0.1");
-		CommunicationHub.getInstance().sendOscMessage(
-				new OSCMessage("/testtest"));
+		System.out.println("gotscha");
 
 		GlobalPreferences.getInstance().setDataPath(this.dataPath(""));
+		oscID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
 		GlobalPreferences.getInstance().setLocalOSCID(oscID);
+				
+		//CommunicationHub.setup(9030, 9040, "127.0.0.1");
+		CommunicationHub.setup(
+				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_LISTENPORT, 9030),
+				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_SENDPORT, 9040),
+				GlobalPreferences.getInstance().getStringProperty(GlobalPreferences.OSC_SENDADDRESS, "127.0.0.1"));				
+		CommunicationHub.getInstance().sendOscMessage(
+				new OSCMessage("/testtest"));
 
 		Canvas.setup(this);
 		gestalt = Canvas.getInstance().getPlugin();
@@ -301,8 +305,31 @@ public class eShelterMain extends PApplet implements OSCListener {
 		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/camera/fovy", this);
 	}
 
+	public void readArguments(){
+		for(int i = 0; i < super.args.length; i++){
+			if(super.args[i].equals("-simID")){
+				oscID = Integer.parseInt(super.args[++i]);
+			}
+			if(super.args[i].equals("-listenerPort")){
+				oscID = Integer.parseInt(super.args[++i]);
+			}
+			if(super.args[i].equals("-sendPort")){
+				oscID = Integer.parseInt(super.args[++i]);
+			}
+			if(super.args[i].equals("-sendAddress")){
+				oscID = Integer.parseInt(super.args[++i]);
+			}
+		}
+	}
+	
 	static public void main(String args[]) {
-		PApplet.main(new String[] { "ch.maybites.prj.eShelter.eShelterMain" });
+		String[] newArgs = new String[args.length + 1];
+		newArgs[0] = "ch.maybites.prj.eShelter.eShelterMain";
+		int counter = 1;
+		for(String arg: args){
+			newArgs[counter++] = arg;
+		}
+		PApplet.main(newArgs);
 	}
 
 	public void destroy() {
