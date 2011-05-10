@@ -69,14 +69,15 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 		GlobalPreferences.getInstance().setDataPath(this.dataPath(""));
 		oscID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
-		GlobalPreferences.getInstance().setLocalOSCID(oscID);
 				
 		//CommunicationHub.setup(9030, 9040, "127.0.0.1");
 		CommunicationHub.setup(
 				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_LISTENPORT, 9030),
-				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_SENDPORT, 9040),
-				GlobalPreferences.getInstance().getStringProperty(GlobalPreferences.OSC_SENDADDRESS, "127.0.0.1"));				
-		CommunicationHub.getInstance().sendOscMessage(
+				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_SEND_MUSIC_PORT, 9040),
+				GlobalPreferences.getInstance().getStringProperty(GlobalPreferences.OSC_SEND_MUSIC_ADDRESS, "127.0.0.1"),				
+				GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OSC_SEND_SIM_PORT, 9040),
+				GlobalPreferences.getInstance().getStringProperty(GlobalPreferences.OSC_SEND_SIM_ADDRESS, "127.0.0.1"));				
+		CommunicationHub.getInstance().sendOscMusicMessage(
 				new OSCMessage("/testtest"));
 
 		Canvas.setup(this);

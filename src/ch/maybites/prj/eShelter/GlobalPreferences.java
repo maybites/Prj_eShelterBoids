@@ -32,11 +32,14 @@ import java.util.*;
 
 public class GlobalPreferences {
 
-	public static final String SIM_ID 			= "SIM_ID";
-	public static final String OSC_LISTENPORT 	= "OSC_LISTENPORT";
-	public static final String OSC_SENDPORT 	= "OSC_SENDPORT";
-	public static final String OSC_SENDADDRESS 	= "OSC_SENDADDRESS";
-	
+	public static final String SIM_ID 					= "SIM_ID";
+	public static final String OTHERSIM_ID 				= "OTHERSIM_ID";
+	public static final String OSC_LISTENPORT 			= "OSC_LISTENPORT";
+	public static final String OSC_SEND_MUSIC_PORT 		= "OSC_SEND_MUSIC_PORT";
+	public static final String OSC_SEND_MUSIC_ADDRESS 	= "OSC_SEND_MUSIC_ADDRESS";
+	public static final String OSC_SEND_SIM_PORT 		= "OSC_SEND_SIM_PORT";
+	public static final String OSC_SEND_SIM_ADDRESS 	= "OSC_SEND_SIM_ADDRESS";
+
 	static private GlobalPreferences _instance;
 	private int localOSCID;
 	private Properties props;
@@ -128,12 +131,4 @@ public class GlobalPreferences {
 		Debugger.getInstance().errorMessage(this.getClass(),"No Property found for key: " + key + "... returning default value: "+_default);
 		return _default;
     }
-
-	public void setLocalOSCID(int sim){
-		localOSCID = sim;
-	}
-
-	public int getOSC_ID(){
-		return localOSCID;
-	}
 }

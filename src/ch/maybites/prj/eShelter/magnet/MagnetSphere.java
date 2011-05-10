@@ -27,6 +27,7 @@ public class MagnetSphere implements Magnet{
 	float innerRadius;
 	float outerRadius;
 	String id;
+	public int swarmID = 0;
 
 	float maxAttractionForce;
 
@@ -39,23 +40,23 @@ public class MagnetSphere implements Magnet{
 	private Model myInnerModel;
 	private Model myOuterModel;
 	
-	public MagnetSphere(PVector _pos, int _attractionType, float _innerRadius,
+	public MagnetSphere(String _id, int _swarmID, PVector _pos, int _attractionType, float _innerRadius,
+			float _outerRadius, float _maxAttractionForce) {
+		set(_swarmID, _pos, _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+		setupRenderer();
+		id = _id;
+	}
+
+	public void set(int _swarmID, PVector _pos, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce) {
 		innerRadius = _innerRadius;
 		outerRadius = _outerRadius;
 		attractionType = _attractionType;
 		maxAttractionForce = _maxAttractionForce;
 		pos = _pos;
-		setupRenderer();
-		id = "default";
+		swarmID = _swarmID;
 	}
-
-	public MagnetSphere(String _id, PVector _pos, int _attractionType, float _innerRadius,
-			float _outerRadius, float _maxAttractionForce) {
-		this(_pos, _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
-		id = _id;
-	}
-
+	
 	public boolean isID(String _id){
 		return (_id.equals(id))? true: false;
 	}
@@ -134,24 +135,27 @@ public class MagnetSphere implements Magnet{
 	}
 
 	public PVector getAttractionForce(Boid _boid) {
-		float d = PVector.dist(pos, _boid.pos);
-		if (d > innerRadius && d <= outerRadius) {
-			PVector steer = new PVector(); // creates vector for steering
-			steer.set(PVector.sub(pos, _boid.pos)); // steering vector points
-			steer.normalize();
-			// multiply according to the distance and attraction type
-			switch (attractionType) {
-			case LEVEL_ATTRACTION_LINEAR:
-				steer.mult(getLevelAttractionLinear(d));
-				break;
-			case INNER_ATTRACTION_LINEAR:
-				steer.mult(getInnerAttractionLinear(d));
-				break;
-			case OUTER_ATTRACTION_LINEAR:
-				steer.mult(getOuterAttractionLinear(d));
-				break;
+		if((swarmID >= 0 && (_boid.swarmID == swarmID || swarmID == 0)) || 
+				(swarmID < 0 && (_boid.swarmID != (-1 * swarmID)))){
+			float d = PVector.dist(pos, _boid.pos);
+			if (d > innerRadius && d <= outerRadius) {
+				PVector steer = new PVector(); // creates vector for steering
+				steer.set(PVector.sub(pos, _boid.pos)); // steering vector points
+				steer.normalize();
+				// multiply according to the distance and attraction type
+				switch (attractionType) {
+				case LEVEL_ATTRACTION_LINEAR:
+					steer.mult(getLevelAttractionLinear(d));
+					break;
+				case INNER_ATTRACTION_LINEAR:
+					steer.mult(getInnerAttractionLinear(d));
+					break;
+				case OUTER_ATTRACTION_LINEAR:
+					steer.mult(getOuterAttractionLinear(d));
+					break;
+				}
+				return steer;
 			}
-			return steer;
 		}
 		return new PVector();
 	}
@@ -166,6 +170,21 @@ public class MagnetSphere implements Magnet{
 
 	private float getOuterAttractionLinear(float _d) {
 	    return maxAttractionForce * ((_d - innerRadius) / (outerRadius - innerRadius));
+	}
+
+
+	public void update() {
+		myInnerModel.mesh().transform().translation.x = pos.x;
+		myInnerModel.mesh().transform().translation.y = pos.y;
+		myInnerModel.mesh().transform().translation.z = pos.z;
+
+		myInnerModel.mesh().scale(innerRadius, innerRadius, innerRadius);
+
+		myOuterModel.mesh().transform().translation.x = pos.x;
+		myOuterModel.mesh().transform().translation.y = pos.y;
+		myOuterModel.mesh().transform().translation.z = pos.z;
+
+		myOuterModel.mesh().scale(outerRadius, outerRadius, outerRadius);
 	}
 
 }

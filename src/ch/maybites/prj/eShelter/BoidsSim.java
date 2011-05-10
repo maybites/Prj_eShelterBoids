@@ -58,14 +58,19 @@ public class BoidsSim implements OSCListener{
     private ShaderProgram _myShaderProgram;
     TexturePlugin myReflectionTexture;
     TexturePlugin myRefractionTexture;
-    
+
+	private SwarmParameters swarmProps;
+
 	float h; // for color
 	
 	PVector pos;
 	
-	private int oscID;
+	private int simID;
+	private int otherSimID;
 
 	public int width, height, depth;
+	
+	private boolean showOutlines = false;
 	
 	private int maxSize;
 
@@ -75,6 +80,8 @@ public class BoidsSim implements OSCListener{
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
 	BoidsSim(int _width, int _height, int n, float ih) {
+		swarmProps = SwarmParameters.getInstance();
+
 		width = _width * 2;
 		height = _height * 2;
 		depth = 600;
@@ -97,16 +104,9 @@ public class BoidsSim implements OSCListener{
 		addBoids(maxSize, 0);
 		//addBoids(2, 4);
 				
-		oscID = GlobalPreferences.getInstance().getOSC_ID();
+		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
+		otherSimID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OTHERSIM_ID, 1);
 		
-		//magnets.add(new MagnetSphere(new PVector(0, 0, 700), MagnetSphere.INNER_ATTRACTION_LINEAR, 80, 220, 1.0f));
-		magnets.add(new MagnetCylinder(new PVector(width / 2, 0, 600), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		//magnets.add(new MagnetCylinder(new PVector(width / 4, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		//magnets.add(new MagnetCylinder(new PVector(-width / 2, 0, 400), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		//magnets.add(new MagnetCylinder(new PVector(-width / 4, 0, 500), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		//magnets.add(new MagnetCylinder(new PVector(0, 0, 500), MagnetCylinder.LEVEL_ATTRACTION_LINEAR, 40, 100, 1.0f));
-		//magnets.add(new EnergyField(new PVector(200, 0, 0), new PVector(200, 50, 50), new PVector(-3, 0, 0)));
-		//magnets.add(new EnergyField(new PVector(-200, 0, 0), new PVector(50, 200, 50), new PVector(0, -3, 0)));
 	}
 
 	private void setupRenderer() {
@@ -133,10 +133,14 @@ public class BoidsSim implements OSCListener{
 	}
 	
 	public void showOutlines(int i){
-		if(i == 1)
+		if(i == 1){
 			myRenderer.add(myInnerModel);
-		else
+			showOutlines = true;
+		}
+		else{
 			myRenderer.remove(myInnerModel);
+			showOutlines = false;
+		}
 		
 		for (int j = 0; j < magnets.size(); j++){
 			magnets.get(j).showOutlines(i);
@@ -154,8 +158,8 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 
-	void addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ, float _radius, float _maxVel, float _maxAcc) {
-		Boid newBoid = new Boid(new PVector(posX, posY, posZ), new PVector(velX, velY, velZ), _radius, _maxVel, _maxAcc, _type);
+	void addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ) {
+		Boid newBoid = new Boid(new PVector(posX, posY, posZ), new PVector(velX, velY, velZ), _type);
 		addBoid(newBoid);
 	}
 
@@ -174,6 +178,13 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 	
+	void removeMagnet(String _id){
+		for (int j = magnets.size() - 1; j >= 0; j--){
+			if(magnets.get(j).isID(_id))
+				magnets.remove(j).delete();
+		}
+	}
+	
 	void removeAllBoids(){
 		for (int j = boids.size() - 1; j >= 1; j--){
 			boids.remove(j).delete();
@@ -186,18 +197,63 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 	
-	void addMagnetCylinder(String _id, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
+	void addMagnetCylinder(String _id, int _swarmID, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce){
-		magnets.add(new MagnetCylinder(new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce));
+		boolean exists = false;
+		for(Magnet mag: magnets){
+			if(mag.isID(_id)){
+				if(mag.getClass().getName().equals("ch.maybites.prj.eShelter.magnet.MagnetCylinder")){
+					exists = true;
+					MagnetCylinder temp = (MagnetCylinder) mag;
+					temp.set(_swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+				}
+			}
+		}
+		if(!exists){
+			MagnetCylinder temp = new MagnetCylinder(_id, _swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+			magnets.add(temp); 
+			if(showOutlines)
+				temp.showOutlines(1);
+		}
 	}
 	
-	void addMagnetSphere(String _id, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
+	void addMagnetSphere(String _id, int _swarmID, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce){
-		magnets.add(new MagnetSphere(new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce));
+		boolean exists = false;
+		for(Magnet mag: magnets){
+			if(mag.isID(_id)){
+				if(mag.getClass().getName().equals("ch.maybites.prj.eShelter.magnet.MagnetSphere")){
+					exists = true;
+					MagnetSphere temp = (MagnetSphere) mag;
+					temp.set(_swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+				}
+			}
+		}
+		if(!exists){
+			MagnetSphere temp = new MagnetSphere(_id, _swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce);
+			magnets.add(temp); 
+			if(showOutlines)
+				temp.showOutlines(1);
+		}
 	}
 
-	void addEnergyField(String _id, float _posX, float _posY, float _posZ, float _sizeX, float _sizeY, float _sizeZ, float _dirX, float _dirY, float _dirZ){
-		magnets.add(new EnergyField(_id, new PVector(-_posX, _posY, _posZ), new PVector(_sizeX, _sizeY, _sizeZ), new PVector(_dirX, _dirY, _dirZ)));
+	void addEnergyField(String _id, int _swarmID, float _posX, float _posY, float _posZ, float _sizeX, float _sizeY, float _sizeZ, float _dirX, float _dirY, float _dirZ){
+		boolean exists = false;
+		for(Magnet mag: magnets){
+			if(mag.isID(_id)){
+				if(mag.getClass().getName().equals("ch.maybites.prj.eShelter.magnet.EnergyField")){
+					exists = true;
+					EnergyField temp = (EnergyField) mag;
+					temp.set(_swarmID, new PVector(-_posX, _posY, _posZ), new PVector(_sizeX, _sizeY, _sizeZ), new PVector(_dirX, _dirY, _dirZ));
+				}
+			}
+		}
+		if(!exists){
+			EnergyField temp = new EnergyField(_id, _swarmID, new PVector(-_posX, _posY, _posZ), new PVector(_sizeX, _sizeY, _sizeZ), new PVector(_dirX, _dirY, _dirZ));
+			magnets.add(temp); 
+			if(showOutlines)
+				temp.showOutlines(1);
+		}
 	}
 
 	void run(boolean aW) {
@@ -236,36 +292,51 @@ public class BoidsSim implements OSCListener{
 				boid.vel.y *= -2.;
 			//boid.pos.y = borderTop;
 		}
-		if (boid.pos.z > borderBack)
-			boid.pos.z = borderFront;
-		if (boid.pos.z < borderFront){
+		if (boid.pos.z > borderBack){
 			sendWarpOSCMessage(boid);
+			boid.delete();
+		}
+		if (boid.pos.z < borderFront){
 			boid.pos.z = borderBack;
 		}
 	}
 	
 	void sendWarpOSCMessage(Boid b){
-		CommunicationHub.getInstance().sendWarpOSCMessage(b);		
+		CommunicationHub.getInstance().sendWarpOSCMessage(b, this.simID, this.otherSimID);		
 	}
 	
 	void sendMirrorOSCMessage(Boid b){
-		CommunicationHub.getInstance().sendMirrorOSCMessage(b);		
+		CommunicationHub.getInstance().sendMirrorOSCMessage(b, this.simID);		
 	}
 
-	void changeBoidParams(float _neighborhoodRadius, float _maxSpeed, float _maxSteerForce) {
-		// iterate through the list of boids
-		for (int i = 0; i < boids.size(); i++){
-			Boid tempBoid = boids.get(i); 
-			tempBoid.neighborhoodRadius = _neighborhoodRadius;
-			tempBoid.maxSpeed = _maxSpeed;
-			tempBoid.maxSteerForce = _maxSteerForce;
-		}
+	public void resetSwarmPhysics(){
+		swarmProps.reset();
+	}
+	
+	public void changeSwarmPhysics(
+			int swarmID,
+			float _neighborhoodRadius, 
+			float _maxSpeed, 
+			float _maxSteerForce, 
+			float _alignementDamper, 
+			float _coherenceDamper, 
+			float _repulseDamper, 
+			float _repulseRadius){
+		swarmProps.setPhysics(
+				swarmID,
+				_neighborhoodRadius, 
+				_maxSpeed, 
+				_maxSteerForce, 
+				_alignementDamper, 
+				_coherenceDamper,
+				_repulseDamper,
+				_repulseRadius);
 	}
 
 	void render(PApplet canvas) {
 		// iterate through the list of boids
-		for (int i = 0; i < boids.size(); i++){
-			Boid tempBoid = boids.get(i); 
+		for (int i = (boids.size() - 1); i >= 0; i--){
+			Boid tempBoid = boids.get(i);
 			tempBoid.calcFlockAcceleration();
 			for (int j = 0; j < magnets.size(); j++){
 				tempBoid.calcForceAcceleration(magnets.get(j));
@@ -276,6 +347,13 @@ public class BoidsSim implements OSCListener{
 			tempBoid.calcReset();
 			
 			executeMessages();
+			
+			if(!tempBoid.isAlive){
+				boids.remove(i);
+			}
+		}
+		for (int j = 0; j < magnets.size(); j++){
+			magnets.get(j).update();
 		}
 	}
 	
@@ -316,24 +394,21 @@ public class BoidsSim implements OSCListener{
 		while(messageQueue.hasMoreMessages()){
 			_message = messageQueue.removeNextMessage();
 			try{
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/magnet/remove/all"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics/reset"))
+					resetSwarmPhysics();
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/all"))
 					removeAllMagnets();
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/randomize/all"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/randomize/all"))
 					typeRandomizeAllBoids();
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/remove/all"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
 					removeAllBoids();
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/addswarm"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm"))
 					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
 							((Integer)(_message.getArguments()[1])).intValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/showoutlines"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
 					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/params"))
-					changeBoidParams(
-							((Float)(_message.getArguments()[0])).floatValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/boid/add"))
-					addBoid(
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))
+					changeSwarmPhysics(
 							((Integer)(_message.getArguments()[0])).intValue(),
 							((Float)(_message.getArguments()[1])).floatValue(),
 							((Float)(_message.getArguments()[2])).floatValue(),
@@ -341,13 +416,31 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[4])).floatValue(),
 							((Float)(_message.getArguments()[5])).floatValue(),
 							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue(),
-							((Float)(_message.getArguments()[9])).floatValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/magnet/add/energyfield"))
+							((Float)(_message.getArguments()[7])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
+					addBoid(
+							((Integer)(_message.getArguments()[0])).intValue(),
+							((Float)(_message.getArguments()[1])).floatValue(),
+							((Float)(_message.getArguments()[2])).floatValue(),
+							((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Float)(_message.getArguments()[5])).floatValue(),
+							((Float)(_message.getArguments()[6])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp"))
+					addBoid(
+							((Integer)(_message.getArguments()[0])).intValue(),
+							((Float)(_message.getArguments()[1])).floatValue() * -1,
+							((Float)(_message.getArguments()[2])).floatValue(),
+							((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Float)(_message.getArguments()[5])).floatValue(),
+							((Float)(_message.getArguments()[6])).floatValue()* -1);
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
+					removeMagnet((String)(_message.getArguments()[0]));
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
 					addEnergyField(
 							(String)(_message.getArguments()[0]),
-							((Float)(_message.getArguments()[1])).floatValue(),
+							((Integer)(_message.getArguments()[1])).intValue(),
 							((Float)(_message.getArguments()[2])).floatValue(),
 							((Float)(_message.getArguments()[3])).floatValue(),
 							((Float)(_message.getArguments()[4])).floatValue(),
@@ -355,27 +448,30 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[6])).floatValue(),
 							((Float)(_message.getArguments()[7])).floatValue(),
 							((Float)(_message.getArguments()[8])).floatValue(),
-							((Float)(_message.getArguments()[9])).floatValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/magnet/add/cylinder"))
+							((Float)(_message.getArguments()[9])).floatValue(),
+							((Float)(_message.getArguments()[10])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
 					addMagnetCylinder(
 							((String)(_message.getArguments()[0])),
-							((Float)(_message.getArguments()[1])).floatValue(),
+							((Integer)(_message.getArguments()[1])).intValue(),
 							((Float)(_message.getArguments()[2])).floatValue(),
 							((Float)(_message.getArguments()[3])).floatValue(),
-							((Integer)(_message.getArguments()[4])).intValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Integer)(_message.getArguments()[5])).intValue(),
 							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
-				if(_message.getAddress().equals("/simulation"+oscID+"/manager/magnet/add/sphere"))
+							((Float)(_message.getArguments()[7])).floatValue(),
+							((Float)(_message.getArguments()[8])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/sphere"))
 					addMagnetSphere(
 							((String)(_message.getArguments()[0])),
-							((Float)(_message.getArguments()[1])).floatValue(),
+							((Integer)(_message.getArguments()[1])).intValue(),
 							((Float)(_message.getArguments()[2])).floatValue(),
 							((Float)(_message.getArguments()[3])).floatValue(),
-							((Integer)(_message.getArguments()[4])).intValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Integer)(_message.getArguments()[5])).intValue(),
 							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
+							((Float)(_message.getArguments()[7])).floatValue(),
+							((Float)(_message.getArguments()[8])).floatValue());
 			}catch (ArrayIndexOutOfBoundsException e){
 				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
 			}catch (ClassCastException e){
@@ -390,16 +486,19 @@ public class BoidsSim implements OSCListener{
 	 * after instantiation is done.
 	 */
 	public void addToOSCListener(){
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/randomize/all", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/remove/all", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/params", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/showoutlines", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/remove/all", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/add/cylinder", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/add/sphere", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/magnet/add/energyfield", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/add", this);
-		CommunicationHub.getInstance().addListener("/simulation"+oscID+"/manager/boid/addswarm", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/warp", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/randomize/all", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/remove/all", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics/reset", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/showoutlines", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/remove/name", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/remove/all", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/add/cylinder", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/add/sphere", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/add/energyfield", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/add", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/addswarm", this);
 	}
 
     public class ShaderMaterial

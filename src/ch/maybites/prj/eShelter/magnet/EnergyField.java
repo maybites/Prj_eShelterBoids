@@ -19,13 +19,21 @@ public class EnergyField implements Magnet{
 
 	private AbstractBin myRenderer;
 	private Cube myInnerModel;
+	public int swarmID = 0;
 
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
-	public EnergyField(PVector _pos, PVector _size, PVector _direction) {
+	public EnergyField(String _id, int _swarmID, PVector _pos, PVector _size, PVector _direction) {
+		set(_swarmID, _pos, _size, _direction);
+		setupRenderer();
+		id = _id;
+	}
+
+	public void set(int _swarmID, PVector _pos, PVector _size, PVector _direction) {
 		pos = _pos;
 		size = _size;
 		direction = _direction;
+		swarmID = _swarmID;
 
 		borderLeft = (int) (pos.x + size.x / 2);;
 		borderRight = (int) (pos.x - size.x / 2);
@@ -33,16 +41,8 @@ public class EnergyField implements Magnet{
 		borderBottom = (int) (pos.y - size.y / 2);
 		borderFront = (int) (pos.z - size.z / 2);
 		borderBack = (int) (pos.z + size.z / 2);
-
-		setupRenderer();
-		id = "default";
 	}
 
-	public EnergyField(String _id, PVector _pos, PVector _size, PVector _direction) {
-		this(_pos, _size, _direction);
-		id = _id;
-	}
-	
 	private void setupRenderer() {
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
 		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
@@ -72,13 +72,22 @@ public class EnergyField implements Magnet{
 	}
 		
 	public PVector getAttractionForce(Boid _boid) {
-		if (_boid.pos.x < borderLeft && _boid.pos.x > borderRight){
-			if (_boid.pos.y < borderTop && _boid.pos.y > borderBottom){
-				if (_boid.pos.z < borderBack && _boid.pos.z > borderFront){
-					return direction;
+		if((swarmID >= 0 && (_boid.swarmID == swarmID || swarmID == 0)) || 
+				(swarmID < 0 && (_boid.swarmID != (-1 * swarmID)))){
+			if (_boid.pos.x < borderLeft && _boid.pos.x > borderRight){
+				if (_boid.pos.y < borderTop && _boid.pos.y > borderBottom){
+					if (_boid.pos.z < borderBack && _boid.pos.z > borderFront){
+						return direction;
+					}
 				}
 			}
 		}
 		return new PVector();
+	}
+
+
+	public void update() {
+		myInnerModel.position().set(pos.x, pos.y, pos.z);
+		myInnerModel.scale().set(size.x, size.y, size.z);
 	}
 }
