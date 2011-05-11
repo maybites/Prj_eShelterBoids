@@ -426,15 +426,16 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[4])).floatValue(),
 							((Float)(_message.getArguments()[5])).floatValue(),
 							((Float)(_message.getArguments()[6])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp"))
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp")){
 					addBoid(
 							((Integer)(_message.getArguments()[0])).intValue(),
 							((Float)(_message.getArguments()[1])).floatValue() * -1,
 							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[3])).floatValue() - 20, //sets the new boid clear within the simbox
 							((Float)(_message.getArguments()[4])).floatValue(),
 							((Float)(_message.getArguments()[5])).floatValue(),
 							((Float)(_message.getArguments()[6])).floatValue()* -1);
+				}
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
 					removeMagnet((String)(_message.getArguments()[0]));
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
