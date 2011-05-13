@@ -49,6 +49,7 @@ import com.illposed.osc.OSCMessage;
 
 public class Boid {
 	// fields
+	private static final int MAX_ARROUSALCOUNTER = 200;
 	
 	public java.util.UUID uuid;
 	public int swarmID;
@@ -70,6 +71,10 @@ public class Boid {
 	float flap = 0;
 	float t = 0;
 	int numberOfSwarms = 4;
+	
+	float arrousal = 1.0f;
+	
+	int arrousalCounter = 0;
 	
 	public boolean isAlive = true;
 	
@@ -216,6 +221,12 @@ public class Boid {
 		flockcounter = 0;
 	}
 
+	
+	public void setArrousal(float _arrousal){
+		arrousal = _arrousal;
+		arrousalCounter = MAX_ARROUSALCOUNTER;
+	}
+	
 	void calcFlock(Boid b) {
 		float d = PVector.dist(pos, b.pos);
 		if (d > 1 && d <= swarmProps.neighborhoodRadius[swarmID]) {
@@ -267,14 +278,16 @@ public class Boid {
 	
 	void applyAcceleration() {
 		vel.add(acc); // add acceleration to velocity
-		vel.limit(swarmProps.maxSpeed[swarmID]); // make sure the velocity vector magnitude does not
+		vel.limit(swarmProps.maxSpeed[swarmID] * arrousal); // make sure the velocity vector magnitude does not
 								// exceed maxSpeed
 		pos.add(vel); // add velocity to position
 		acc.mult(0); // reset acceleration
 	}
 
 	void scatter() {
-
+		if(arrousalCounter-- > 0){
+			arrousal = arrousal / MAX_ARROUSALCOUNTER * arrousalCounter + 1;
+		}
 	}
 	
 	void applyTranslation() {

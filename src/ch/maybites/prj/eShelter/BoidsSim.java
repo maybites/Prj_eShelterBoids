@@ -237,6 +237,26 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 
+	void addArrousalMagnetSphere(String _id, int _swarmID, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
+			float _outerRadius, float _maxAttractionForce, float _arrousal){
+		boolean exists = false;
+		for(Magnet mag: magnets){
+			if(mag.isID(_id)){
+				if(mag.getClass().getName().equals("ch.maybites.prj.eShelter.magnet.ArrousalMagnetSphere")){
+					exists = true;
+					ArrousalMagnetSphere temp = (ArrousalMagnetSphere) mag;
+					temp.set(_swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce, _arrousal);
+				}
+			}
+		}
+		if(!exists){
+			ArrousalMagnetSphere temp = new ArrousalMagnetSphere(_id, _swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce, _arrousal);
+			magnets.add(temp); 
+			if(showOutlines)
+				temp.showOutlines(1);
+		}
+	}
+
 	void addEnergyField(String _id, int _swarmID, float _posX, float _posY, float _posZ, float _sizeX, float _sizeY, float _sizeZ, float _dirX, float _dirY, float _dirZ){
 		boolean exists = false;
 		for(Magnet mag: magnets){
@@ -293,8 +313,9 @@ public class BoidsSim implements OSCListener{
 			//boid.pos.y = borderTop;
 		}
 		if (boid.pos.z > borderBack){
-			sendWarpOSCMessage(boid);
-			boid.delete();
+			boid.pos.z = borderFront;
+			//sendWarpOSCMessage(boid);
+			//boid.delete();
 		}
 		if (boid.pos.z < borderFront){
 			boid.pos.z = borderBack;
@@ -341,6 +362,7 @@ public class BoidsSim implements OSCListener{
 			for (int j = 0; j < magnets.size(); j++){
 				tempBoid.calcForceAcceleration(magnets.get(j));
 			}
+			tempBoid.scatter();
 			tempBoid.applyAcceleration();
 			checkBounds(tempBoid);
 			tempBoid.applyTranslation();

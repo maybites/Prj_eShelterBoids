@@ -57,6 +57,8 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	int initBoidNum = 200; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
+	SkeletonTracker skelton;
+	GestureScanner scanner;
 	float zoom = 800;
 	boolean smoothEdges = false, avoidWalls = false;
 
@@ -98,9 +100,13 @@ public class eShelterMain extends PApplet implements OSCListener {
 		// create and fill the list of boids
 		flock1 = new BoidsSim(width, height, initBoidNum, 255);
 		flock1.addToOSCListener();
-		// flock2 = new BoidList(100,255);
-		// flock3 = new BoidList(100,128);
 
+		//create skeleton
+		skelton = new SkeletonTracker(flock1);
+		skelton.addToOSCListener();
+		
+		scanner = new GestureScanner(skelton, flock1);
+		scanner.addToOSCListener();
 		// Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D).add(_myCube);
 
 		Debugger.getInstance().infoMessage(this.getClass(),
@@ -143,31 +149,11 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	public void draw() {
 		background(0);
-		// myDispatcher.draw(this);
-		// clear screen
-
-		/**
-		 * beginCamera(); camera(); rotateX(map(mouseY, 0, height, 0, TWO_PI));
-		 * rotateY(map(mouseX, width, 0, 0, TWO_PI)); translate(0, 0, zoom);
-		 * endCamera(); background(205); directionalLight(255, 255, 255, 0, 1,
-		 * -100); noFill(); stroke(0);
-		 * 
-		 * line(0, 0, 300, 0, height, 300); line(0, 0, 900, 0, height, 900);
-		 * line(0, 0, 300, width, 0, 300); line(0, 0, 900, width, 0, 900);
-		 * 
-		 * line(width, 0, 300, width, height, 300); line(width, 0, 900, width,
-		 * height, 900); line(0, height, 300, width, height, 300); line(0,
-		 * height, 900, width, height, 900);
-		 * 
-		 * line(0, 0, 300, 0, 0, 900); line(0, height, 300, 0, height, 900);
-		 * line(width, 0, 300, width, 0, 900); line(width, height, 300, width,
-		 * height, 900);
-		 **/
 
 		flock1.run(avoidWalls);
 		flock1.render(this);
-		// flock2.run();
-		// flock3.run();
+		skelton.run();
+		scanner.run();
 
 		myFPSCounter.loop();
 	}
