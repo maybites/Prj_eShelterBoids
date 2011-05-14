@@ -45,6 +45,7 @@ import java.util.*;
 import javax.media.opengl.GL;
 
 import ch.maybites.prj.eShelter.magnet.*;
+import ch.maybites.tools.MayRandom;
 import processing.core.*;
 
 import com.illposed.osc.*;
@@ -52,6 +53,9 @@ import com.illposed.osc.*;
 public class BoidsSim implements OSCListener{
 	private ArrayList<Boid> boids; // will hold the boids in this BoidList
 	private ArrayList<Magnet> magnets; // will hold the magnets in this BoidList
+	
+	private ArrayList<Boid> incubator; // will hold the incubating boids
+	
 	private MessageQueue messageQueue;
 	
     private ShaderManager _myShaderManager;
@@ -76,7 +80,9 @@ public class BoidsSim implements OSCListener{
 
 	private AbstractBin myRenderer;
 	private Cube myInnerModel;
-	
+
+	MayRandom random = new MayRandom();
+
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
 	BoidsSim(int _width, int _height, int n, float ih) {
@@ -96,19 +102,60 @@ public class BoidsSim implements OSCListener{
 		borderBack = depth / 2;
 		
 		maxSize = n;
-		boids = new ArrayList<Boid>();
+
 		magnets = new ArrayList<Magnet>();
 		messageQueue = new MessageQueue();
 		h = ih;
 		setupRenderer();
-		addBoids(maxSize, 0);
-		//addBoids(2, 4);
+		
+		boids = new ArrayList<Boid>();
+		for (int i = 0; i < maxSize; i++){
+			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), 1);
+			newBoid.setShader(new ShaderMaterial(), myReflectionTexture);
+			if(i > maxSize/2)
+				newBoid.kill();
+			boids.add(newBoid);
+		}
 				
 		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
 		otherSimID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OTHERSIM_ID, 1);
 		
 	}
 
+	public void incubate(PVector _pos, int _size, int _type){
+		swarmProps.incubateID(_type);
+		if(incubator == null){
+			incubator = new ArrayList<Boid>();
+		} 
+		addIncubatingBoids(_pos, _size - incubator.size(), 0);
+		for(Boid b: incubator){
+			if(b != null)
+				b.applySwarmCharcteristics();
+		}
+		//Debugger.getInstance().infoMessage(this.getClass(), "incubate boids - size: " + incubator.size());
+		
+	}
+	
+	public void releaseIncubator(){
+		for(Boid b: incubator){
+			if(b != null)
+				b.applyToSwarm(swarmProps.incubateSwarmType);
+		}
+		incubator.clear();
+	}
+	
+	private void addIncubatingBoids(PVector _pos, int _number, int _type){
+		if(_number > 0){
+			for(int i = 0; i < _number; i++){
+				incubator.add(addBoid(_type, _pos, new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1))));
+			}			
+		} else if(_number < 0){
+			for(int i = -_number -1; i >= 0; i--){
+				removeBoid(incubator.remove(i));
+			}			
+		}		
+	}
+	
 	private void setupRenderer() {
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
 
@@ -151,21 +198,29 @@ public class BoidsSim implements OSCListener{
 		myRenderer.remove(myInnerModel);
 	}
 
-	void addBoids(int _number, int _type) {
-		for (int i = 0; i < _number; i++){
-			Boid newBoid = new Boid(new PVector(0, 0, 0), _type);
-			addBoid(newBoid);
+	Boid addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ) {
+		return addBoid(_type, new PVector(posX, posY, posZ), new PVector(velX, velY, velZ));
+	}
+	
+	Boid addBoid(int _type, PVector _pos, PVector _vel) {
+		for(Boid b:boids){
+			if(!b.isAlive){
+				b.set(_pos, _vel, _type);
+				return b;
+			}
+		}
+		return null;
+	}
+
+	void removeAllBoids(){
+		for(Boid b:boids){
+			b.kill();
 		}
 	}
-
-	void addBoid(int _type, float posX, float posY, float posZ, float velX, float velY, float velZ) {
-		Boid newBoid = new Boid(new PVector(posX, posY, posZ), new PVector(velX, velY, velZ), _type);
-		addBoid(newBoid);
-	}
-
-	void addBoid(Boid b) {
-		boids.add(b);
-		b.setShader(new ShaderMaterial(), myReflectionTexture);
+	
+	void removeBoid(Boid b){
+		if(b != null)
+			b.kill();
 	}
 
 	void addMagnet(Magnet m) {
@@ -184,13 +239,7 @@ public class BoidsSim implements OSCListener{
 				magnets.remove(j).delete();
 		}
 	}
-	
-	void removeAllBoids(){
-		for (int j = boids.size() - 1; j >= 1; j--){
-			boids.remove(j).delete();
-		}
-	}
-	
+		
 	void typeRandomizeAllBoids(){
 		for (int j = boids.size() - 1; j >= 1; j--){
 			boids.get(j).applyRandomSwarm();
@@ -276,17 +325,6 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 
-	void run(boolean aW) {
-		// iterate through the list of boids
-		for (int i = 0; i < boids.size(); i++){
-			// create a temporary boid
-			Boid tempBoid = (Boid) boids.get(i);
-			for (int j = 0; j < boids.size(); j++){//  and iterate through the rest of the boids
-				tempBoid.calcFlock(boids.get(j));
-			}
-		}
-	}
-
 	void checkBounds(Boid boid) {
 		if (boid.pos.x > borderLeft){
 			if(boid.vel.x > 0){
@@ -354,29 +392,36 @@ public class BoidsSim implements OSCListener{
 				_repulseRadius);
 	}
 
+	void run(boolean aW) {
+		// iterate through the list of boids
+		for (Boid tempBoid: boids)		// iterate through the all of the boids
+			if(tempBoid.isAlive)
+			for (Boid tempBoid2: boids)//  and iterate through the rest of the boids
+				if(tempBoid2.isAlive && !tempBoid2.equals(tempBoid))
+					tempBoid2.calcFlock(tempBoid);
+	}
+
 	void render(PApplet canvas) {
 		// iterate through the list of boids
-		for (int i = (boids.size() - 1); i >= 0; i--){
-			Boid tempBoid = boids.get(i);
-			tempBoid.calcFlockAcceleration();
-			for (int j = 0; j < magnets.size(); j++){
-				tempBoid.calcForceAcceleration(magnets.get(j));
-			}
-			tempBoid.scatter();
-			tempBoid.applyAcceleration();
-			checkBounds(tempBoid);
-			tempBoid.applyTranslation();
-			tempBoid.calcReset();
-			
-			executeMessages();
-			
-			if(!tempBoid.isAlive){
-				boids.remove(i);
+		int counter = 0;
+		for (Boid tempBoid: boids){
+			if(tempBoid.isAlive){
+				counter++;
+				tempBoid.calcFlockAcceleration();
+				for (int j = 0; j < magnets.size(); j++){
+					tempBoid.calcForceAcceleration(magnets.get(j));
+				}
+				tempBoid.scatter();
+				tempBoid.applyAcceleration();
+				checkBounds(tempBoid);
+				tempBoid.applyTranslation();
+				tempBoid.calcReset();
 			}
 		}
 		for (int j = 0; j < magnets.size(); j++){
 			magnets.get(j).update();
 		}
+		executeMessages();
 	}
 	
 	public void acceptMessage(java.util.Date time, OSCMessage _message){
@@ -424,9 +469,10 @@ public class BoidsSim implements OSCListener{
 					typeRandomizeAllBoids();
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
 					removeAllBoids();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm"))
-					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
-							((Integer)(_message.getArguments()[1])).intValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm")){
+//					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
+//							((Integer)(_message.getArguments()[1])).intValue());
+				}
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
 					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))

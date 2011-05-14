@@ -18,6 +18,9 @@ public class SwarmParameters {
 	Color color[];
 	
 	int size;
+	
+	int incubateSwarmType = 0;
+	
 	private MayRandom random = new MayRandom();
 
 	static private SwarmParameters _instance;
@@ -27,7 +30,7 @@ public class SwarmParameters {
 	}
 	
 	public void reset(){
-		size = 5;
+		size = 6;
 		
 		neighborhoodRadius = new float[size];
 		maxSpeed = new float[size];
@@ -51,15 +54,15 @@ public class SwarmParameters {
 		repulseRadius[0] = 15f;
 		repulseRadiusSqr[0] = repulseRadius[0] * repulseRadius[0];
 
-		color[1] = new Color(0.341f, 0.137f, 0.415f); //blau
-		sc[1] = 10;
+		color[1] = new Color(1f, 1f, 1f);
+		sc[1] = 8;
 		neighborhoodRadius[1] = 150;
-		maxSpeed[1] = 1f;
+		maxSpeed[1] = 2f;
 		maxSteerForce[1] = .1f;
 		alignementDamper[1] = 2.0f;
 		coherenceDamper[1] = 3.0f;
 		repulseDamper[1] = 1.0f;
-		repulseRadius[1] = 20f;
+		repulseRadius[1] = 15f;
 		repulseRadiusSqr[1] = repulseRadius[1] * repulseRadius[1];
 
 		color[2] = new Color(0.756f, 0.22f, 0.231f); //orange
@@ -95,6 +98,25 @@ public class SwarmParameters {
 		repulseRadius[4] = 10f;
 		repulseRadiusSqr[4] = repulseRadius[4] * repulseRadius[4];
 
+		color[5] = new Color(0.341f, 0.137f, 0.415f); //blau
+		sc[5] = 10;
+		neighborhoodRadius[5] = 150;
+		maxSpeed[5] = 1f;
+		maxSteerForce[5] = .1f;
+		alignementDamper[5] = 2.0f;
+		coherenceDamper[5] = 3.0f;
+		repulseDamper[5] = 1.0f;
+		repulseRadius[5] = 20f;
+		repulseRadiusSqr[5] = repulseRadius[5] * repulseRadius[5];
+
+	}
+	
+	public void incubateID(int _type){
+		if(_type > 0 && _type < size){
+			incubateSwarmType = _type;
+			color[0] = color[_type];
+			sc[0] = sc[_type];
+		}
 	}
 	
 	static public SwarmParameters getInstance() {

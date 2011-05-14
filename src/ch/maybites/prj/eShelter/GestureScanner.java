@@ -55,15 +55,12 @@ public class GestureScanner implements OSCListener{
 	SkeletonTracker myTracker;
 	BoidsSim sim;
 	
+	Vector3f yAxis = new Vector3f(0, 1, 0);
+	
 	GestureScanner(SkeletonTracker _tracker, BoidsSim _sim) {
 		messageQueue = new MessageQueue();
 		myTracker = _tracker;
 		sim = _sim;
-	}
-
-	private boolean isInAxis(float _v1, float _v2, float v3){
-		
-		return true;
 	}
 	
 	private boolean trackGestureCallBoids(float _angle1, float _angle2){
@@ -85,6 +82,10 @@ public class GestureScanner implements OSCListener{
 	static final int MODE_WAITING = 0;
 	static final int MODE_CALLING_BOIDS = 1;
 	static final int MODE_CONTROLLING_BOIDS = 2;
+	static final int MODE_INCUBATE_BOIDS = 3;
+	static final int MODE_RELEASING_BOIDS = 4;
+	
+	static final int CALLING_SPEED_THRESHOLD = 10;
 	
 	int mode = 0;
 	boolean cond_callingBoidsLeft = false;
@@ -98,43 +99,81 @@ public class GestureScanner implements OSCListener{
 	
 	void run() {
 		executeMessages();
-		Vector3f lh = myTracker.getCurrentLeftHand();
-		Vector3f rh = myTracker.getCurrentRightHand();
-		Vector3f ls = myTracker.getCurrentLeftShoulder();
-		Vector3f rs = myTracker.getCurrentRightShoulder();
-		Vector3f lel = myTracker.getCurrentLeftElbow();
-		Vector3f rel = myTracker.getCurrentRightElbow();
-		Vector3f neck = myTracker.getCurrentNeck();
-		Vector3f head = myTracker.getCurrentHead();
 		if(myTracker.currentIsActive()){
-			if(trackGestureCallBoids(0.6f, 0.6f)){
-				//Debugger.getInstance().infoMessage(this.getClass(), "action!!");
-				setMode(MODE_CALLING_BOIDS);
-			}
-			//check for parallel upperarms
+			Vector3f lh = myTracker.getCurrentLeftHand();
+			Vector3f rh = myTracker.getCurrentRightHand();
 			
-			if(myTracker.getCurrentRightHand().distance(myTracker.getCurrentLeftHand()) < myTracker.getCurrentShoulderRef(1.5f)){
+			switch(mode){
+			case MODE_WAITING:
+				// check for tracking init gesture
+				if(trackGestureCallBoids(0.6f, 0.6f)){
+					setMode(MODE_CALLING_BOIDS);
+				}else if(		
+						myTracker.getCurrentRightHand().distance(myTracker.getCurrentLeftHand()) < myTracker.getCurrentShoulderRef(0.5f) &&
+						myTracker.getCurrentRightHand().distance(myTracker.getCurrentTorso()) < myTracker.getCurrentShoulderRef(1f)){
+					setMode(MODE_INCUBATE_BOIDS);
+				}
+				break;
+			case MODE_INCUBATE_BOIDS:
+				Vector3f handDirection = myTracker.getCurrentRightHand();
+				handDirection.sub(myTracker.getCurrentLeftHand());
+				float _size = handDirection.length();
+				int _angle = (int)(yAxis.angle(handDirection)*2f);
+				Vector3f handPos = myTracker.getCurrentRightHand();
+				handPos.add(myTracker.getCurrentLeftHand());
+				handPos.scale(0.5f);
+				//Debugger.getInstance().infoMessage(this.getClass(), "incubate boids - size: " + _size + " angle: " + _angle);
+				sim.incubate(new PVector(handPos.x, handPos.y, handPos.z), 30, _angle);
+				_size = (_size > myTracker.getCurrentShoulderRef(1f))? _size : myTracker.getCurrentShoulderRef(1f);
+				sim.addArrousalMagnetSphere("incubator", 0, handPos.x, handPos.y, handPos.z, 0, _size, _size * 3, 5f, 4f);
+				if(		myTracker.getCurrentRightHand().y > myTracker.getCurrentNeck().y &&
+						myTracker.getCurrentLeftHand().y > myTracker.getCurrentNeck().y){
+					sim.releaseIncubator();
+					sim.removeMagnet("incubator");
+					mode = MODE_WAITING;
+				}
+				break;
+			case MODE_CALLING_BOIDS:
+				mode = MODE_CONTROLLING_BOIDS;
+				cond_callingBoidsLeft = true;
+				cond_callingBoidsRight = true;
+				Debugger.getInstance().infoMessage(this.getClass(), "calling boids!");
+				break;
+			case MODE_CONTROLLING_BOIDS:
+				if(!cond_callingBoidsLeft && !cond_callingBoidsRight){
+					mode = MODE_WAITING;
+				}
+				if(cond_callingBoidsLeft){
+					sim.addArrousalMagnetSphere("leftCaller", 1, lh.x, lh.y, lh.z, 0, 50, 500, 5f, 4f);
+					//Debugger.getInstance().infoMessage(this.getClass(), "getCurrentLeftHandSpeed: " + myTracker.getCurrentLeftHandSpeed());
+					if(myTracker.getCurrentLeftHandSpeed() > CALLING_SPEED_THRESHOLD)
+						cond_callingBoidsLeft = !cond_callingBoidsLeft;
+				}else{
+					sim.removeMagnet("leftCaller");
+				}
+				if(cond_callingBoidsRight){
+					sim.addArrousalMagnetSphere("rightCaller", 1, rh.x, rh.y, rh.z, 0, 50, 500,	5f, 4f);
+					if(myTracker.getCurrentRightHandSpeed() > CALLING_SPEED_THRESHOLD)
+						cond_callingBoidsRight = !cond_callingBoidsRight;
+				}else{
+					sim.removeMagnet("rightCaller");
+				}
+				break;
 			}
-		}
-		switch(mode){
-		case MODE_CALLING_BOIDS:
-			mode = MODE_CONTROLLING_BOIDS;
-			cond_callingBoidsLeft = true;
-			cond_callingBoidsRight = true;
-			break;
-		case MODE_CONTROLLING_BOIDS:
-			if(!cond_callingBoidsLeft && !cond_callingBoidsRight){
-				setMode(MODE_WAITING);
-			}
-			if(cond_callingBoidsLeft){
-				sim.addArrousalMagnetSphere("leftCaller", 0, lh.x, lh.y, lh.z, 0, 50, 500, 5f, 4f);
-			}else{
+		}else{
+			switch(mode){
+			case MODE_CONTROLLING_BOIDS:
 				sim.removeMagnet("leftCaller");
-			}
-			if(cond_callingBoidsRight){
-				sim.addArrousalMagnetSphere("rightCaller", 0, rh.x, rh.y, rh.z, 0, 50, 500,	5f, 4f);
-			}else{
 				sim.removeMagnet("rightCaller");
+				Debugger.getInstance().infoMessage(this.getClass(), "droped caller magnets");
+				mode = MODE_WAITING;
+				break;
+			case MODE_INCUBATE_BOIDS:
+				sim.removeMagnet("incubator");
+				sim.releaseIncubator();
+				Debugger.getInstance().infoMessage(this.getClass(), "released incubator");
+				mode = MODE_WAITING;
+				break;
 			}
 		}
 	}

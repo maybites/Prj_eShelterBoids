@@ -76,7 +76,7 @@ public class Boid {
 	
 	int arrousalCounter = 0;
 	
-	public boolean isAlive = true;
+	public boolean isAlive;
 	
 	int simID;
 
@@ -96,44 +96,28 @@ public class Boid {
 	private PVector mySepSum;
 	private PVector myRepulse;
 	int flockcounter;
-
-	// constructors
-	Boid(PVector _pos) {
-		init(	_pos,
-				new PVector(random.create(-1, 1), 
-				random.create(-1, 1),
-				random.create(1, -1)), 0);
-	}
-
-	Boid(PVector _pos, int _type) {
-		init(_pos, new PVector(random.create(-1, 1), 
-				random.create(-1, 1),
-				random.create(1, -1)), _type);
-	}
 	
 	Boid(PVector _pos, PVector inVel, int _type) {
-		init(_pos, inVel, _type);
+		swarmProps = SwarmParameters.getInstance();
+		myRepulse = new PVector();
+		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
+		uuid = java.util.UUID.randomUUID();
+
+		setupRenderer();
+		
+		set(_pos, inVel, _type);
 	}
 
-	private void init(PVector _pos, PVector inVel, int _type) {
+	public void set(PVector _pos, PVector inVel, int _type) {
 		pos = new PVector(_pos.x, _pos.y, _pos.z);
 		vel = new PVector(inVel.x, inVel.y, inVel.z);
 		acc = new PVector(0, 0, 0);
-		swarmProps = SwarmParameters.getInstance();
-		
-		myRepulse = new PVector();
-		
-		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
-		
-		uuid = java.util.UUID.randomUUID();
-
-		applySwarmCharcteristics();
-		
-		setupRenderer();
 
 		applyToSwarm(_type);
 
 		calcReset();
+		
+		isAlive = true;
 	}
 
 	public void setShader(ShaderMaterial shaderMaterial, TexturePlugin myReflectionTexture){
@@ -175,8 +159,6 @@ public class Boid {
 
 		myTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
 		texColor = IntegerBitmap.getDefaultImageBitmap(1, 1); 
-		setColor();
-		// myTexture.load(Bitmaps.getBitmap(Resource.getStream("demo/common/styrofoamplates.png")));
 		myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_REPEAT);
 		myModel.mesh().material().addPlugin(myTexture);
 
@@ -185,13 +167,8 @@ public class Boid {
 		/* add model to renderer */
 		myRenderer.add(myModel);
 	}
-	
-	private void setColor(){
-		texColor.setPixel(0, 0, color);
-		myTexture.load(texColor);
-	}
-	
-	public void delete(){
+		
+	public void kill(){
 		myRenderer.remove(myModel);
 		isAlive = false;
 	}
@@ -202,13 +179,16 @@ public class Boid {
 
 	public void applyToSwarm(int _swarm){
 		swarmID = _swarm;
+		if(myRenderer.find(myModel) == -1)
+			myRenderer.add(myModel);
 		applySwarmCharcteristics();
-		setColor();
 	}
 	
-	private void applySwarmCharcteristics(){
+	public void applySwarmCharcteristics(){
 		scale = random.create(swarmProps.sc[swarmID] - swarmProps.sc[swarmID] / 2, swarmProps.sc[swarmID] +  - swarmProps.sc[swarmID] / 2);
 		color = swarmProps.color[swarmID];
+		texColor.setPixel(0, 0, color);
+		myTexture.load(texColor);
 	}
 	
 	void calcReset() {
