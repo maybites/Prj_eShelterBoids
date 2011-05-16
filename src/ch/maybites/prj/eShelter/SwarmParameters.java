@@ -90,8 +90,8 @@ public class SwarmParameters {
 		color[4] = new Color(0.792f, 0.121f, 0.568f); //violett
 		sc[4] = 10;
 		neighborhoodRadius[4] = 100;
-		maxSpeed[4] = 0.1f;
-		maxSteerForce[4] = .01f;
+		maxSpeed[4] = 1f;
+		maxSteerForce[4] = .05f;
 		alignementDamper[4] = 2.0f;
 		coherenceDamper[4] = 4.0f;
 		repulseDamper[4] = 1.0f;

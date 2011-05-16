@@ -63,7 +63,7 @@ public class BoidsSim implements OSCListener{
     TexturePlugin myReflectionTexture;
     TexturePlugin myRefractionTexture;
 
-	private SwarmParameters swarmProps;
+	public SwarmParameters swarmProps;
 
 	float h; // for color
 	
@@ -110,7 +110,8 @@ public class BoidsSim implements OSCListener{
 		
 		boids = new ArrayList<Boid>();
 		for (int i = 0; i < maxSize; i++){
-			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), 1);
+			int randomType = (int) random.create(1, swarmProps.size);
+			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), randomType);
 			newBoid.setShader(new ShaderMaterial(), myReflectionTexture);
 			if(i > maxSize/2)
 				newBoid.kill();
@@ -300,6 +301,26 @@ public class BoidsSim implements OSCListener{
 		}
 		if(!exists){
 			ArrousalMagnetSphere temp = new ArrousalMagnetSphere(_id, _swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce, _arrousal);
+			magnets.add(temp); 
+			if(showOutlines)
+				temp.showOutlines(1);
+		}
+	}
+	
+	void addArrousalXclusivMagnetSphere(String _id, int _swarmID, float _posX, float _posY, float _posZ, int _attractionType, float _innerRadius,
+			float _outerRadius, float _maxAttractionForce, float _arrousal){
+		boolean exists = false;
+		for(Magnet mag: magnets){
+			if(mag.isID(_id)){
+				if(mag.getClass().getName().equals("ch.maybites.prj.eShelter.magnet.ArrousalXclusivMagnetSphere")){
+					exists = true;
+					ArrousalXclusivMagnetSphere temp = (ArrousalXclusivMagnetSphere) mag;
+					temp.set(_swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce, _arrousal);
+				}
+			}
+		}
+		if(!exists){
+			ArrousalXclusivMagnetSphere temp = new ArrousalXclusivMagnetSphere(_id, _swarmID, new PVector(_posX, _posY, _posZ), _attractionType, _innerRadius, _outerRadius, _maxAttractionForce, _arrousal);
 			magnets.add(temp); 
 			if(showOutlines)
 				temp.showOutlines(1);

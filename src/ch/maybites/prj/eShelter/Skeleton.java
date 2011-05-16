@@ -299,6 +299,14 @@ public class Skeleton{
 	public Vector3f getCurrentLeftShoulder(){
 		return new Vector3f(_mySUpperLeftArm[currentStorageID].points[0]);
 	}
+	
+	public Vector3f getCurrentRightHip(){
+		return new Vector3f(_mySUpperRightLeg[currentStorageID].points[0]);
+	}
+	
+	public Vector3f getCurrentLeftHip(){
+		return new Vector3f(_mySUpperLeftLeg[currentStorageID].points[0]);
+	}
 
 	public Vector3f getCurrentRightElbow(){
 		return new Vector3f(_mySUpperRightArm[currentStorageID].points[1]);

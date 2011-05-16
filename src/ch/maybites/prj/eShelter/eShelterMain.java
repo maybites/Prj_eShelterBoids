@@ -55,7 +55,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 300; // amount of boids to start the program with
+	int initBoidNum = 1000; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	SkeletonTracker skelton;
 	GestureScanner scanner;

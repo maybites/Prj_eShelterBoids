@@ -81,7 +81,7 @@ public class Boid {
 	int simID;
 
 	// final String MODELNAME = "model/singleE_lowPoly.obj";
-	final String MODELNAME = "model/singleE_lowPoly1.obj";
+	final String MODELNAME = "resource/model/singleE_lowPoly1.obj";
 	// final String MODELNAME = "model/weirdobject.obj";
 
 	MayRandom random = new MayRandom();
@@ -135,16 +135,9 @@ public class Boid {
 	}
 	
 	private void setupRenderer() {
-		try {
-			FileInputStream file = new FileInputStream(GlobalPreferences
-					.getInstance().getAbsResourcePath(MODELNAME));
-			myModelData = ModelLoaderOBJ.getModelData(file);
-			file.close();
-		} catch (IOException exp) {
-			Debugger.getInstance().errorMessage(this.getClass(),
-					"No Model File found: " + exp.getMessage());
-			;
-		}
+		myModelData = ModelLoaderOBJ.getModelData(GlobalPreferences
+					.getInstance().getStream(MODELNAME));
+			
 		myRenderer = Canvas.getInstance().getPlugin().bin(Gestalt.BIN_3D);
 		Mesh myModelMesh = Canvas
 				.getInstance()
@@ -223,7 +216,7 @@ public class Boid {
 				// cohesion
 				myCohSum.add(b.pos);
 			} else {
-				myRepulse.mult(2f); // repulse of an boid of different swarm is stronger.
+				myRepulse.mult(3f); // repulse of an boid of different swarm is stronger.
 				if(d < swarmProps.repulseRadius[swarmID])
 					sendCollisionOSCMessage(b);
 			}

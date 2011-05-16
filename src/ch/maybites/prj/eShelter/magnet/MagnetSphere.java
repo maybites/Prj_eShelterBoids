@@ -13,12 +13,14 @@ import gestalt.model.Model;
 import gestalt.model.ModelData;
 import gestalt.model.ModelLoaderOBJ;
 import gestalt.render.bin.AbstractBin;
+import gestalt.shape.Color;
 import gestalt.shape.Mesh;
 import processing.core.*;
 
 public class MagnetSphere implements Magnet{
 
-	final String MODELNAME = "model/magnet/sphere.obj";
+	public String MODELNAME = "model/magnet/sphere.obj";
+	public Color color = new Color(255, 0, 0);
 
 	public final static int LEVEL_ATTRACTION_LINEAR = 0;
 	public final static int INNER_ATTRACTION_LINEAR = 1;
@@ -35,10 +37,10 @@ public class MagnetSphere implements Magnet{
 
 	PVector pos;
 
-	private AbstractBin myRenderer;
-	private ModelData myModelData;
-	private Model myInnerModel;
-	private Model myOuterModel;
+	protected AbstractBin myRenderer;
+	protected ModelData myModelData;
+	protected Model myInnerModel;
+	protected Model myOuterModel;
 	
 	public MagnetSphere(String _id, int _swarmID, PVector _pos, int _attractionType, float _innerRadius,
 			float _outerRadius, float _maxAttractionForce) {
@@ -104,11 +106,14 @@ public class MagnetSphere implements Magnet{
 		// myTexture.setWrapMode(Canvas.getInstance().getPlugin().TEXTURE_WRAPMODE_CLAMP);
 		// myModel.mesh().material().addPlugin(myTexture);
 
-		myInnerModel.mesh().material().lit = true;
-		myOuterModel.mesh().material().lit = true;
+		myInnerModel.mesh().material().lit = false;
+		myOuterModel.mesh().material().lit = false;
 
 		myInnerModel.mesh().material().wireframe = true;
 		myOuterModel.mesh().material().wireframe = true;
+		
+		myInnerModel.mesh().material().color = color;
+		myOuterModel.mesh().material().color = color;
 
 		myInnerModel.mesh().transform().translation.x = pos.x;
 		myInnerModel.mesh().transform().translation.y = pos.y;
@@ -160,15 +165,15 @@ public class MagnetSphere implements Magnet{
 		return new PVector();
 	}
 
-	private float getLevelAttractionLinear(float _d) {
+	protected float getLevelAttractionLinear(float _d) {
 		return maxAttractionForce;
 	}
 
-	private float getInnerAttractionLinear(float _d) {
+	protected float getInnerAttractionLinear(float _d) {
 	    return maxAttractionForce * ((outerRadius - _d) / (outerRadius - innerRadius));
 	}
 
-	private float getOuterAttractionLinear(float _d) {
+	protected float getOuterAttractionLinear(float _d) {
 	    return maxAttractionForce * ((_d - innerRadius) / (outerRadius - innerRadius));
 	}
 

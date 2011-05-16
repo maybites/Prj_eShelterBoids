@@ -55,6 +55,18 @@ public class GestureScanner implements OSCListener{
 	SkeletonTracker myTracker;
 	BoidsSim sim;
 	
+	static final int MODE_WAITING = 0;
+	static final int MODE_CALLING_BOIDS = 1;
+	static final int MODE_CONTROLLING_BOIDS = 2;
+	static final int MODE_INCUBATE_BOIDS = 3;
+	static final int MODE_RELEASING_BOIDS = 4;
+	
+	static final int CALLING_SPEED_THRESHOLD = 150;
+	
+	int mode = 0;
+	boolean cond_callingBoidsLeft = false;
+	boolean cond_callingBoidsRight = false;
+
 	Vector3f yAxis = new Vector3f(0, 1, 0);
 	
 	GestureScanner(SkeletonTracker _tracker, BoidsSim _sim) {
@@ -63,15 +75,15 @@ public class GestureScanner implements OSCListener{
 		sim = _sim;
 	}
 	
-	private boolean trackGestureCallBoids(float _angle1, float _angle2){
+	private boolean trackGestureRegisterForTracking(float _angle1, float _angle2){
 		if(myTracker.getCurrentLowerLeftArm().angle(myTracker.getCurrentLowerRightArm()) < _angle1){
-			if(myTracker.getCurrentLowerLeftArm().angle(myTracker.getCurrentLowerRightArm()) < _angle2){
-				Vector3f cross1 = myTracker.getCurrentUperLeftArm();
+			if(myTracker.getCurrentLowerLeftArm().angle(myTracker.getCurrentLowerRightArm()) < _angle1){
+				Vector3f cross1 = myTracker.getCurrentUpperLeftArm();
 				cross1.cross(myTracker.getCurrentLowerLeftArm());
 				Vector3f cross2 = myTracker.getCurrentUpperRightArm();
 				cross2.cross(myTracker.getCurrentLowerRightArm());
 				cross2.scale(-1.f);
-				if(cross1.angle(cross2) < 0.6f){
+				if(cross1.angle(cross2) < _angle2){
 					return true;
 				}
 			}
@@ -79,53 +91,70 @@ public class GestureScanner implements OSCListener{
 		return false;
 	}
 	
-	static final int MODE_WAITING = 0;
-	static final int MODE_CALLING_BOIDS = 1;
-	static final int MODE_CONTROLLING_BOIDS = 2;
-	static final int MODE_INCUBATE_BOIDS = 3;
-	static final int MODE_RELEASING_BOIDS = 4;
-	
-	static final int CALLING_SPEED_THRESHOLD = 10;
-	
-	int mode = 0;
-	boolean cond_callingBoidsLeft = false;
-	boolean cond_callingBoidsRight = false;
-	
-	void setMode(int _mode){
-		if(mode == MODE_WAITING){
-			mode = _mode;
+	private boolean trackGestureStretchedArms(float _handDistance, float _factor, float _angle1){
+		if(_handDistance > myTracker.getCurrentShoulderRef(_factor)){
+			float angle1 = myTracker.getCurrentLowerLeftArm().angle(myTracker.getCurrentUpperLeftArm());
+			float angle2 = myTracker.getCurrentLowerRightArm().angle(myTracker.getCurrentUpperRightArm());
+			if(angle1 < _angle1){
+				if(angle2 < _angle1){
+					return true;
+				}
+			}
 		}
+		return false;
 	}
 	
+	private boolean trackGestureStretchedArmsBelowHips(float _handDistance, float _factor, float _angle1){
+		if(_handDistance > myTracker.getCurrentShoulderRef(_factor)){
+			if(		myTracker.getCurrentLeftHand().y < myTracker.getCurrentLeftHip().y &&
+					myTracker.getCurrentRightHand().y < myTracker.getCurrentRightHip().y){
+				float angle1 = myTracker.getCurrentLowerLeftArm().angle(myTracker.getCurrentUpperLeftArm());
+				float angle2 = myTracker.getCurrentLowerRightArm().angle(myTracker.getCurrentUpperRightArm());
+				if(angle1 < _angle1){
+					if(angle2 < _angle1){
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	private boolean trackGestureCloseHandsBevoreStomach(float _distanceHand){
+		if(		_distanceHand < myTracker.getCurrentShoulderRef(0.5f) &&
+			myTracker.getCurrentRightHand().distance(myTracker.getCurrentTorso()) < myTracker.getCurrentShoulderRef(1f))
+			return true;
+		return false;
+	}
+		
 	void run() {
 		executeMessages();
 		if(myTracker.currentIsActive()){
 			Vector3f lh = myTracker.getCurrentLeftHand();
 			Vector3f rh = myTracker.getCurrentRightHand();
+			Vector3f handDirection = myTracker.getCurrentRightHand();
+			handDirection.sub(myTracker.getCurrentLeftHand());
+			float handDistance = handDirection.length();
 			
 			switch(mode){
 			case MODE_WAITING:
 				// check for tracking init gesture
-				if(trackGestureCallBoids(0.6f, 0.6f)){
-					setMode(MODE_CALLING_BOIDS);
-				}else if(		
-						myTracker.getCurrentRightHand().distance(myTracker.getCurrentLeftHand()) < myTracker.getCurrentShoulderRef(0.5f) &&
-						myTracker.getCurrentRightHand().distance(myTracker.getCurrentTorso()) < myTracker.getCurrentShoulderRef(1f)){
-					setMode(MODE_INCUBATE_BOIDS);
-				}
+				if(trackGestureStretchedArms(handDistance, 5f, 0.3f))
+					mode = MODE_CALLING_BOIDS;
+//				else if(trackGestureCloseHandsBevoreStomach(handDistance))
+//					mode = MODE_INCUBATE_BOIDS;
+				else if(trackGestureStretchedArmsBelowHips(handDistance, 3f, 0.3f))
+					mode = MODE_INCUBATE_BOIDS;
 				break;
 			case MODE_INCUBATE_BOIDS:
-				Vector3f handDirection = myTracker.getCurrentRightHand();
-				handDirection.sub(myTracker.getCurrentLeftHand());
-				float _size = handDirection.length();
 				int _angle = (int)(yAxis.angle(handDirection)*2f);
 				Vector3f handPos = myTracker.getCurrentRightHand();
 				handPos.add(myTracker.getCurrentLeftHand());
 				handPos.scale(0.5f);
 				//Debugger.getInstance().infoMessage(this.getClass(), "incubate boids - size: " + _size + " angle: " + _angle);
-				sim.incubate(new PVector(handPos.x, handPos.y, handPos.z), 30, _angle);
-				_size = (_size > myTracker.getCurrentShoulderRef(1f))? _size : myTracker.getCurrentShoulderRef(1f);
-				sim.addArrousalMagnetSphere("incubator", 0, handPos.x, handPos.y, handPos.z, 0, _size, _size * 3, 5f, 4f);
+				sim.incubate(new PVector(handPos.x, handPos.y, handPos.z), 50, myTracker.getSwarmID());
+				float limitedhandDistance = (handDistance > myTracker.getCurrentShoulderRef(1f))? handDistance : myTracker.getCurrentShoulderRef(1f);
+				sim.addArrousalXclusivMagnetSphere("incubator", 0, handPos.x, handPos.y, handPos.z, 0, 100, limitedhandDistance, 5f, 4f);
 				if(		myTracker.getCurrentRightHand().y > myTracker.getCurrentNeck().y &&
 						myTracker.getCurrentLeftHand().y > myTracker.getCurrentNeck().y){
 					sim.releaseIncubator();
@@ -135,28 +164,26 @@ public class GestureScanner implements OSCListener{
 				break;
 			case MODE_CALLING_BOIDS:
 				mode = MODE_CONTROLLING_BOIDS;
-				cond_callingBoidsLeft = true;
-				cond_callingBoidsRight = true;
 				Debugger.getInstance().infoMessage(this.getClass(), "calling boids!");
 				break;
 			case MODE_CONTROLLING_BOIDS:
-				if(!cond_callingBoidsLeft && !cond_callingBoidsRight){
-					mode = MODE_WAITING;
-				}
-				if(cond_callingBoidsLeft){
-					sim.addArrousalMagnetSphere("leftCaller", 1, lh.x, lh.y, lh.z, 0, 50, 500, 5f, 4f);
-					//Debugger.getInstance().infoMessage(this.getClass(), "getCurrentLeftHandSpeed: " + myTracker.getCurrentLeftHandSpeed());
-					if(myTracker.getCurrentLeftHandSpeed() > CALLING_SPEED_THRESHOLD)
-						cond_callingBoidsLeft = !cond_callingBoidsLeft;
-				}else{
+				float innerRadius = (handDistance > myTracker.getCurrentShoulderRef(1f))? myTracker.getCurrentShoulderRef(1f): handDistance;
+				//Debugger.getInstance().infoMessage(this.getClass(), "limitedhandDistance: " + limitedhandDistance + " getCurrentShoulderRef: " + myTracker.getCurrentShoulderRef(1f));
+				sim.addArrousalMagnetSphere("leftCaller", myTracker.getSwarmID(), lh.x, lh.y, lh.z, 0, innerRadius, innerRadius * 5, 5f, 4f);
+				sim.addArrousalMagnetSphere("rightCaller", myTracker.getSwarmID(), rh.x, rh.y, rh.z, 0, innerRadius,  innerRadius * 5, 5f, 4f);
+				boolean maxSpeed = myTracker.getCurrentLeftHandSpeed() > CALLING_SPEED_THRESHOLD ||  //exit if handspeed execeeds max speed
+									myTracker.getCurrentRightHandSpeed() > CALLING_SPEED_THRESHOLD;
+				boolean actionZone = !myTracker.checkIfInActionZone(myTracker.getCurrentLeftHand()) || // hands exit the actionZone
+									!myTracker.checkIfInActionZone(myTracker.getCurrentLeftHand());
+				if(maxSpeed || actionZone ){
+					if(maxSpeed)
+						Debugger.getInstance().infoMessage(this.getClass(), "droped caller magnets due to speed");
+					else
+						Debugger.getInstance().infoMessage(this.getClass(), "droped caller magnets due to exit action zone");
+					
 					sim.removeMagnet("leftCaller");
-				}
-				if(cond_callingBoidsRight){
-					sim.addArrousalMagnetSphere("rightCaller", 1, rh.x, rh.y, rh.z, 0, 50, 500,	5f, 4f);
-					if(myTracker.getCurrentRightHandSpeed() > CALLING_SPEED_THRESHOLD)
-						cond_callingBoidsRight = !cond_callingBoidsRight;
-				}else{
 					sim.removeMagnet("rightCaller");
+					mode = MODE_WAITING;
 				}
 				break;
 			}
@@ -165,7 +192,7 @@ public class GestureScanner implements OSCListener{
 			case MODE_CONTROLLING_BOIDS:
 				sim.removeMagnet("leftCaller");
 				sim.removeMagnet("rightCaller");
-				Debugger.getInstance().infoMessage(this.getClass(), "droped caller magnets");
+				Debugger.getInstance().infoMessage(this.getClass(), "droped caller magnets because of skelton exit");
 				mode = MODE_WAITING;
 				break;
 			case MODE_INCUBATE_BOIDS:

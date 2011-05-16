@@ -43,6 +43,8 @@ import mathematik.Vector3f;
 
 import processing.core.*;
 
+import ch.maybites.tools.MayRandom;
+
 import com.illposed.osc.*;
 
 public class SkeletonTracker implements OSCListener{
@@ -61,7 +63,9 @@ public class SkeletonTracker implements OSCListener{
 	private boolean showOutlines = false;
 	
 	private AbstractBin myRenderer;
-	
+
+	MayRandom random = new MayRandom();
+
 	int size = 10;
 	
 	float cos;
@@ -72,25 +76,42 @@ public class SkeletonTracker implements OSCListener{
 	BoidsSim sim;
 	
 	Line refLineY;
+	
+	private int randomSwarmID;
+	
+	int actionZoneBorderLeft, actionZoneBorderRight, actionZoneBorderBack, actionZoneBorderFront;
 		
 	SkeletonTracker(BoidsSim _sim) {
 		sim = _sim;
 			    
 		depth = 600;
 				
+		actionZoneBorderLeft = 600;
+		actionZoneBorderRight = -600;
+		actionZoneBorderBack =  sim.borderBack;
+		actionZoneBorderFront = sim.borderFront;
+		
 		messageQueue = new MessageQueue();
 		
 		skeletons = new Skeleton[size];
 		for(int i = 0; i < skeletons.length; i++){
 			skeletons[i] = new Skeleton(i);
-			skeletons[i].setBoundaries(sim.borderFront, sim.borderBack, -300, 300);
+			skeletons[i].setBoundaries(actionZoneBorderFront, actionZoneBorderBack, actionZoneBorderRight, actionZoneBorderLeft);
 		}
 		
 		relposition(new Vector3f(210f, 2330f, -862f));
 		refposition(new Vector3f(0f, -700, 200));
 		refscale(new Vector3f(0.5f, 0.5f, 0.5f));							
 	}
-				
+			
+	public int getSwarmID(){
+		return randomSwarmID;
+	}
+	
+	private void setRandomSwarmID(){
+		randomSwarmID = (int)random.create(1, sim.swarmProps.size);
+	}
+	
 	private void refscale(Vector3f _scale){
 		for(Skeleton skel: skeletons){
 			skel.refscale(_scale);
@@ -117,8 +138,19 @@ public class SkeletonTracker implements OSCListener{
 				return true;
 			}
 		}
+		setRandomSwarmID();
 		return false;
 	}
+	
+	public boolean checkIfInActionZone(Vector3f test){
+		if(		test.x < actionZoneBorderLeft &&
+				test.x > actionZoneBorderRight &&
+				test.z > actionZoneBorderFront &&
+				test.z < actionZoneBorderBack)
+			return true;
+		return false;
+	}
+
 	
 	public float getCurrentShoulderRef(float _factor){
 		return skeletons[currentID].getCurrentShoulderRef(_factor);
@@ -142,6 +174,14 @@ public class SkeletonTracker implements OSCListener{
 	
 	public Vector3f getCurrentLeftShoulder(){
 		return skeletons[currentID].getCurrentLeftShoulder();
+	}
+
+	public Vector3f getCurrentRightHip(){
+		return skeletons[currentID].getCurrentRightHip();
+	}
+	
+	public Vector3f getCurrentLeftHip(){
+		return skeletons[currentID].getCurrentLeftHip();
 	}
 
 	public Vector3f getCurrentRightElbow(){
@@ -176,7 +216,7 @@ public class SkeletonTracker implements OSCListener{
 		return skeletons[currentID].getCurrentLowerRightArm();
 	}
 
-	public Vector3f getCurrentUperLeftArm(){
+	public Vector3f getCurrentUpperLeftArm(){
 		return skeletons[currentID].getCurrentUperLeftArm();
 	}
 	
