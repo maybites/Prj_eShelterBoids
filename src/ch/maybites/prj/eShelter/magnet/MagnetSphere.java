@@ -63,6 +63,10 @@ public class MagnetSphere implements Magnet{
 		return (_id.equals(id))? true: false;
 	}
 	
+	public boolean isSystemsID(){
+		return (id.startsWith("System", 0))? true: false;
+	}
+	
 	public void delete(){
 		myRenderer.remove(myInnerModel);
 		myRenderer.remove(myOuterModel);

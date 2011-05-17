@@ -167,7 +167,7 @@ public class Boid {
 	}
 	
 	public void applyRandomSwarm(){
-		applyToSwarm((int)random.create(0, swarmProps.size));
+		applyToSwarm(swarmProps.getRandomSwarmID());
 	}
 
 	public void applyToSwarm(int _swarm){
@@ -178,10 +178,12 @@ public class Boid {
 	}
 	
 	public void applySwarmCharcteristics(){
-		scale = random.create(swarmProps.sc[swarmID] - swarmProps.sc[swarmID] / 2, swarmProps.sc[swarmID] +  - swarmProps.sc[swarmID] / 2);
+		scale = random.create(swarmProps.sc[swarmID] - swarmProps.sc[swarmID] / 2, swarmProps.sc[swarmID]  - swarmProps.sc[swarmID] / 2);
 		color = swarmProps.color[swarmID];
 		texColor.setPixel(0, 0, color);
 		myTexture.load(texColor);
+		if(myRefractionTexture != null)
+			myRefractionTexture.load(texColor);
 	}
 	
 	void calcReset() {
@@ -236,9 +238,11 @@ public class Boid {
 			myAliSum.div((float) flockcounter);
 			myAliSum.limit(swarmProps.maxSteerForce[swarmID]);
 			myCohSum.div((float) flockcounter);
+			mySteer = PVector.sub(myCohSum, pos);
+			mySteer.limit(swarmProps.maxSteerForce[swarmID]);
+		} else {
+			acc.add(new PVector(random.create(-.1f,.1f), random.create(-.1f,.1f), random.create(-.1f,.1f)));
 		}
-		mySteer = PVector.sub(myCohSum, pos);
-		mySteer.limit(swarmProps.maxSteerForce[swarmID]);
 
 		acc.add(PVector.mult(myAliSum, swarmProps.alignementDamper[swarmID]));
 		acc.add(PVector.mult(mySteer, swarmProps.coherenceDamper[swarmID]));

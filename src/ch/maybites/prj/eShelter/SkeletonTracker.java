@@ -109,7 +109,7 @@ public class SkeletonTracker implements OSCListener{
 	}
 	
 	private void setRandomSwarmID(){
-		randomSwarmID = (int)random.create(1, sim.swarmProps.size);
+		randomSwarmID = sim.swarmProps.getRandomSwarmID();
 	}
 	
 	private void refscale(Vector3f _scale){
@@ -145,8 +145,8 @@ public class SkeletonTracker implements OSCListener{
 	public boolean checkIfInActionZone(Vector3f test){
 		if(		test.x < actionZoneBorderLeft &&
 				test.x > actionZoneBorderRight &&
-				test.z > actionZoneBorderFront &&
-				test.z < actionZoneBorderBack)
+				test.z < actionZoneBorderFront &&
+				test.z > actionZoneBorderBack)
 			return true;
 		return false;
 	}

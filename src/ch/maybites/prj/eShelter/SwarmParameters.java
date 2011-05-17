@@ -14,12 +14,15 @@ public class SwarmParameters {
 	float alignementDamper[];
 	float coherenceDamper[];
 	float repulseDamper[];
+	int incubationSize[];
 	float sc[]; // scale factor for the render of the boid
 	Color color[];
 	
-	int size;
+	private int size;
 	
 	int incubateSwarmType = 0;
+	
+	int ceoSwarmType;
 	
 	private MayRandom random = new MayRandom();
 
@@ -29,9 +32,25 @@ public class SwarmParameters {
 		reset();
 	}
 	
+	public int getRandomSwarmID(){
+		return (int)random.create(1, size - 1);
+	}
+	
+	public int getIncubationSize(int _swarmID){
+		if(_swarmID >= 0 && _swarmID < size){
+			return incubationSize[_swarmID];
+		}
+		return -1;
+	}
+	
+	public int size(){
+		return size;
+	}
+	
 	public void reset(){
 		size = 6;
-		
+		ceoSwarmType = size-1;
+			
 		neighborhoodRadius = new float[size];
 		maxSpeed = new float[size];
 		maxSteerForce = new float[size];
@@ -40,11 +59,13 @@ public class SwarmParameters {
 		alignementDamper = new float[size];
 		coherenceDamper = new float[size];
 		repulseDamper = new float[size];
+		incubationSize = new int[size];
 		sc = new float[size];
 		color = new Color[size];
 
 		color[0] = new Color(1f, 1f, 1f);
 		sc[0] = 8;
+		incubationSize[0] = 50;
 		neighborhoodRadius[0] = 150;
 		maxSpeed[0] = 2f;
 		maxSteerForce[0] = .1f;
@@ -53,9 +74,10 @@ public class SwarmParameters {
 		repulseDamper[0] = 1.0f;
 		repulseRadius[0] = 15f;
 		repulseRadiusSqr[0] = repulseRadius[0] * repulseRadius[0];
-
+		
 		color[1] = new Color(1f, 1f, 1f);
 		sc[1] = 8;
+		incubationSize[1] = 50;
 		neighborhoodRadius[1] = 150;
 		maxSpeed[1] = 2f;
 		maxSteerForce[1] = .1f;
@@ -67,6 +89,7 @@ public class SwarmParameters {
 
 		color[2] = new Color(0.756f, 0.22f, 0.231f); //orange
 		sc[2] = 3;
+		incubationSize[2] = 50;
 		neighborhoodRadius[2] = 70;
 		maxSpeed[2] = 5f;
 		maxSteerForce[2] = .1f;
@@ -78,6 +101,7 @@ public class SwarmParameters {
 
 		color[3] = new Color(0.972f, 0.6f, 0.325f); //weinrot
 		sc[3] = 7;
+		incubationSize[3] = 50;
 		neighborhoodRadius[3] = 100;
 		maxSpeed[3] = 4f;
 		maxSteerForce[3] = .2f;
@@ -89,6 +113,7 @@ public class SwarmParameters {
 
 		color[4] = new Color(0.792f, 0.121f, 0.568f); //violett
 		sc[4] = 10;
+		incubationSize[4] = 50;
 		neighborhoodRadius[4] = 100;
 		maxSpeed[4] = 1f;
 		maxSteerForce[4] = .05f;
@@ -98,10 +123,12 @@ public class SwarmParameters {
 		repulseRadius[4] = 10f;
 		repulseRadiusSqr[4] = repulseRadius[4] * repulseRadius[4];
 
-		color[5] = new Color(0.341f, 0.137f, 0.415f); //blau
-		sc[5] = 10;
+		//ceo
+		color[5] = new Color(0.341f, 0.137f, 0.915f); //blau
+		sc[5] = 30;
+		incubationSize[5] = 1;
 		neighborhoodRadius[5] = 150;
-		maxSpeed[5] = 1f;
+		maxSpeed[5] = 4f;
 		maxSteerForce[5] = .1f;
 		alignementDamper[5] = 2.0f;
 		coherenceDamper[5] = 3.0f;

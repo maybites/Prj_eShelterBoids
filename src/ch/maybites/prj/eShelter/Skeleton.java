@@ -91,11 +91,14 @@ public class Skeleton{
 	
 	int storageSize = 10;
 	int currentStorageID;
+
+	SkeletonColor color;
 	
 	int myID;
 	float torsoBoundaryFront, torsoBoundaryBack, torsoBoundaryRight, torsoBoundaryLeft;
 	
 	Skeleton(int _id) {
+		color = new SkeletonColor();
 		
 	    _mySNeck = new Line[storageSize];
 	    _mySLeftShoulder = new Line[storageSize];
@@ -144,26 +147,24 @@ public class Skeleton{
         myReflectionTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
         myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/sky-reflection.png")));
         myReflectionTexture.setTextureUnit(GL.GL_TEXTURE0);
-
-        Color color = new Color(1f, 1f, 1f);
                 
         for(int i = 0; i < storageSize; i++){
-    	    _mySNeck[i] = createLine(i, color);
-    	    _mySLeftShoulder[i] = createLine(i, color);
-    	    _mySUpperLeftArm[i] = createLine(i, color);
-    	    _mySLowerLeftArm[i] = createLine(i, color);
-    	    _mySUpperLeftTorso[i] = createLine(i, color);
-    	    _mySLowerLeftTorso[i] = createLine(i, color);
-    	    _mySUpperLeftLeg[i] = createLine(i, color);
-    	    _mySLowerLeftLeg[i] = createLine(i, color);
-    	    _mySRightShoulder[i] = createLine(i, color);
-    	    _mySUpperRightArm[i] = createLine(i, color);
-    	    _mySLowerRightArm[i] = createLine(i, color);
-    	    _mySUpperRightTorso[i] = createLine(i, color);
-    	    _mySLowerRightTorso[i] = createLine(i, color);
-    	    _mySUpperRightLeg[i] = createLine(i, color);
-    	    _mySLowerRightLeg[i] = createLine(i, color);
-    	    _mySHip[i] = createLine(i, color);
+    	    _mySNeck[i] = createLine(i, color.color());
+    	    _mySLeftShoulder[i] = createLine(i, color.color());
+    	    _mySUpperLeftArm[i] = createLine(i, color.color());
+    	    _mySLowerLeftArm[i] = createLine(i, color.color());
+    	    _mySUpperLeftTorso[i] = createLine(i, color.color());
+    	    _mySLowerLeftTorso[i] = createLine(i, color.color());
+    	    _mySUpperLeftLeg[i] = createLine(i, color.color());
+    	    _mySLowerLeftLeg[i] = createLine(i, color.color());
+    	    _mySRightShoulder[i] = createLine(i, color.color());
+    	    _mySUpperRightArm[i] = createLine(i, color.color());
+    	    _mySLowerRightArm[i] = createLine(i, color.color());
+    	    _mySUpperRightTorso[i] = createLine(i, color.color());
+    	    _mySLowerRightTorso[i] = createLine(i, color.color());
+    	    _mySUpperRightLeg[i] = createLine(i, color.color());
+    	    _mySLowerRightLeg[i] = createLine(i, color.color());
+    	    _mySHip[i] = createLine(i, color.color());
     	    _drawable[i] = false;
         }
 	}
@@ -199,8 +200,8 @@ public class Skeleton{
 		if(		torso.length() != 0 &&
 				torso.x < torsoBoundaryLeft &&
 				torso.x > torsoBoundaryRight &&
-				torso.z > torsoBoundaryFront &&
-				torso.z < torsoBoundaryBack)
+				torso.z < torsoBoundaryFront &&
+				torso.z > torsoBoundaryBack)
 			return true;
 		return false;
 	}
@@ -250,6 +251,9 @@ public class Skeleton{
 		
 		_line.points[0].set(pos1.x, pos1.y, pos1.z);
 		_line.points[1].set(pos2.x, pos2.y, pos2.z);
+		
+		_line.colors[0].set(color.color());
+		_line.colors[1].set(color.color());
 
 		if(confidence1 > 0.5f && confidence2 > 0.5f){
 	        if(myRenderer.find(_line) == -1){
@@ -261,11 +265,18 @@ public class Skeleton{
 	}
 
 	public void testForActivity(){
+		color.nextFrame();
 		if(frameDrops < storageSize)
-			if(checkIfDrawable())
+			if(checkIfDrawable()){
 				isActive = true;
-		else
+				if(!color.isAcvive())
+					color.gotoReactive();
+			}
+		else{
 			isActive = false;
+			if(color.isAcvive())
+				color.gotoOffline();
+		}
 	}
 	
 	public boolean isActive(){

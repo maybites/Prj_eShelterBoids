@@ -64,7 +64,8 @@ public class BoidsSim implements OSCListener{
     TexturePlugin myRefractionTexture;
 
 	public SwarmParameters swarmProps;
-
+	int[] swarmIDCounter;
+	
 	float h; // for color
 	
 	PVector pos;
@@ -85,12 +86,21 @@ public class BoidsSim implements OSCListener{
 
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
+	float warpThickness = 100;
+	float warpStrength = .4f;
+	float backReflThickness = 100;
+	float backReflStrength = .5f;
+	float topReflThickness = 100;
+	float topReflStrength = -1f;
+	float bottomReflThickness = 100;
+	float bottomReflStrength = 1f;
+
 	BoidsSim(int _width, int _height, int n, float ih) {
 		swarmProps = SwarmParameters.getInstance();
 
 		width = _width * 2;
 		height = _height * 2;
-		depth = 600;
+		depth = 800;
 		pos = new PVector();
 		pos.set(0, 0, 0);
 		
@@ -98,8 +108,8 @@ public class BoidsSim implements OSCListener{
 		borderRight = - width/ 2;
 		borderTop = height / 2;
 		borderBottom = - height / 2;
-		borderFront = -depth / 2;
-		borderBack = depth / 2;
+		borderFront = depth / 2;
+		borderBack = -depth / 2;
 		
 		maxSize = n;
 
@@ -110,19 +120,50 @@ public class BoidsSim implements OSCListener{
 		
 		boids = new ArrayList<Boid>();
 		for (int i = 0; i < maxSize; i++){
-			int randomType = (int) random.create(1, swarmProps.size);
+			int randomType = swarmProps.getRandomSwarmID();
 			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), randomType);
 			newBoid.setShader(new ShaderMaterial(), myReflectionTexture);
-			if(i > maxSize/2)
-				newBoid.kill();
+			//if(i > maxSize/2)
+			//	newBoid.kill();
 			boids.add(newBoid);
 		}
 				
 		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
 		otherSimID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OTHERSIM_ID, 1);
-		
+	
+		this.addMagnetCylinder("ceo", 1, 0, 0, 0, 2, 300, 500, 2f);
+		setSystemEnergyFields(100, .4f, 100, .5f, 100, -1f, 100, 1f);
 	}
 
+	private void setSystemEnergyFields(
+			float _warpThickness, 
+			float _warpStrength, 
+			float _backReflThickness, 
+			float _backReflStrength, 
+			float _topReflThickness, 
+			float _topReflStrength,
+			float _bottomReflThickness,
+			float _bottomReflStrength){
+		 warpThickness = _warpThickness;
+		 warpStrength = _warpStrength;
+		 backReflThickness = _backReflThickness;
+		 backReflStrength = _backReflStrength;
+		 topReflThickness = _topReflThickness;
+		 topReflStrength = _topReflStrength;
+		 bottomReflThickness = _bottomReflThickness;
+		 bottomReflStrength = _bottomReflStrength;
+		//warpfield 
+//		addEnergyField("System_warp", 0, 0f, 0f, borderFront - warpThickness/2, width, height, warpThickness, 0f, 0f, warpStrength);
+		//back reflectionfield
+//		addEnergyField("System_backLeft", 0, width / 4, 0f, borderBack + backReflThickness/2, width / 2, height, backReflThickness, -backReflStrength * 3, 0f, backReflStrength);
+//		addEnergyField("System_backRight", 0, -width / 4, 0f, borderBack + backReflThickness/2, width / 2, height, backReflThickness, backReflStrength * 3, 0f, backReflStrength);
+		//top reflectionfield
+//		addEnergyField("System_top", 2, 0f, borderTop - topReflThickness/2, 0, width, topReflThickness, depth, 0f, 0f, topReflStrength);
+		//bottom reflectionfield
+//		addEnergyField("System_bottom", 2, 0f, borderBottom + bottomReflThickness/2, 0, width, bottomReflThickness, depth, 0f, 0f, bottomReflStrength);
+	}
+
+	
 	public void incubate(PVector _pos, int _size, int _type){
 		swarmProps.incubateID(_type);
 		if(incubator == null){
@@ -230,7 +271,8 @@ public class BoidsSim implements OSCListener{
 
 	void removeAllMagnets(){
 		for (int j = magnets.size() - 1; j >= 0; j--){
-			magnets.remove(j).delete();
+			if(!magnets.get(j).isSystemsID())
+				magnets.remove(j).delete();
 		}
 	}
 	
@@ -371,12 +413,12 @@ public class BoidsSim implements OSCListener{
 				boid.vel.y *= -2.;
 			//boid.pos.y = borderTop;
 		}
-		if (boid.pos.z > borderBack){
+		if (boid.pos.z < borderBack){
 			boid.pos.z = borderFront;
 			//sendWarpOSCMessage(boid);
 			//boid.delete();
 		}
-		if (boid.pos.z < borderFront){
+		if (boid.pos.z > borderFront){
 			boid.pos.z = borderBack;
 		}
 	}
@@ -413,6 +455,26 @@ public class BoidsSim implements OSCListener{
 				_repulseRadius);
 	}
 
+	private void killRandomBoids(int _couter){
+		if(_couter > maxSize - maxSize/10){
+			int swarmIDToKill = 0;
+			int maxCounter = swarmIDCounter[swarmIDToKill];
+			for(int i = 1; i < swarmIDCounter.length; i++){
+				if(maxCounter <  swarmIDCounter[i]){
+					maxCounter = swarmIDCounter[i];
+					swarmIDToKill = i;
+				}
+			}
+
+			for(Boid b:boids){
+				if(b.isAlive && b.swarmID == swarmIDToKill){
+					b.kill();
+					return;
+				}
+			}
+		}
+	}
+	
 	void run(boolean aW) {
 		// iterate through the list of boids
 		for (Boid tempBoid: boids)		// iterate through the all of the boids
@@ -424,9 +486,11 @@ public class BoidsSim implements OSCListener{
 
 	void render(PApplet canvas) {
 		// iterate through the list of boids
+		swarmIDCounter = new int[this.swarmProps.size()];
 		int counter = 0;
 		for (Boid tempBoid: boids){
 			if(tempBoid.isAlive){
+				swarmIDCounter[tempBoid.swarmID]++;
 				counter++;
 				tempBoid.calcFlockAcceleration();
 				for (int j = 0; j < magnets.size(); j++){
@@ -439,6 +503,7 @@ public class BoidsSim implements OSCListener{
 				tempBoid.calcReset();
 			}
 		}
+		killRandomBoids(counter);
 		for (int j = 0; j < magnets.size(); j++){
 			magnets.get(j).update();
 		}
@@ -472,6 +537,11 @@ public class BoidsSim implements OSCListener{
 	/**
 	 *  /simulation/manager/magnet/remove/all 
 	 *  /simulation"+oscID+"/manager/boid/addswarm <(int)number> <(int)type>
+	 */
+	
+	/**
+	 * /simulation/manager/magnet/system (float)_warpThickness (float)_warpStrength (float)_backReflThickness (float)_backReflStrength 
+	 *		(float)_topReflThickness (float)_topReflStrength (float)_bottomReflThickness (float)_bottomReflStrength
 	 */
 	
 	/**
@@ -520,7 +590,7 @@ public class BoidsSim implements OSCListener{
 							((Integer)(_message.getArguments()[0])).intValue(),
 							((Float)(_message.getArguments()[1])).floatValue() * -1,
 							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue() - 20, //sets the new boid clear within the simbox
+							((Float)(_message.getArguments()[3])).floatValue() - this.warpThickness - 20, //sets the new boid clear within the simbox
 							((Float)(_message.getArguments()[4])).floatValue(),
 							((Float)(_message.getArguments()[5])).floatValue(),
 							((Float)(_message.getArguments()[6])).floatValue()* -1);
@@ -540,6 +610,16 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[8])).floatValue(),
 							((Float)(_message.getArguments()[9])).floatValue(),
 							((Float)(_message.getArguments()[10])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/system"))
+					setSystemEnergyFields(
+							((Float)(_message.getArguments()[0])).floatValue(),
+							((Float)(_message.getArguments()[1])).floatValue(),
+							((Float)(_message.getArguments()[2])).floatValue(),
+							((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Float)(_message.getArguments()[5])).floatValue(),
+							((Float)(_message.getArguments()[6])).floatValue(),
+							((Float)(_message.getArguments()[7])).floatValue());
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
 					addMagnetCylinder(
 							((String)(_message.getArguments()[0])),
@@ -582,6 +662,7 @@ public class BoidsSim implements OSCListener{
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics/reset", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/showoutlines", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/system", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/remove/name", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/remove/all", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/magnet/add/cylinder", this);
