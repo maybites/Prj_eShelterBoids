@@ -6,9 +6,9 @@ public class SkeletonColor {
 
     Color color = new Color(.2f, .2f, .2f);
     Color colorActiveState = new Color(.2f, .2f, .2f);
-    Color colorPassiveState = new Color(.3f, .3f, .3f);
-    Color colorReActiveState = new Color(.2f, .2f, .2f);
-    Color colorOfflineState = new Color(.2f, .2f, .2f);
+    Color colorPassiveState = new Color(.5f, .5f, .1f);
+    Color colorReActiveState = new Color(.1f, .9f, .9f);
+    Color colorOfflineState = new Color(.0f, .0f, .0f);
 	final int FRAMES_OFFLINE_TO_REACTIVE = 50;
 	final int FRAMES_REACTIVE_TO_PASSIVE = 200;
 	final int FRAMES_PASSIVE_TO_ACTIVE = 70;
@@ -74,6 +74,7 @@ public class SkeletonColor {
 					mode = REACTIVE2PASSIVE;
 					counter = 0;
 				}
+				break;
 			case REACTIVE2PASSIVE:
 				if(counter < FRAMES_REACTIVE_TO_PASSIVE){
 					color.r = getMixedColorValue(colorReActiveState.r, colorPassiveState.r, FRAMES_REACTIVE_TO_PASSIVE, counter);
@@ -81,6 +82,7 @@ public class SkeletonColor {
 					color.b = getMixedColorValue(colorReActiveState.b, colorPassiveState.b, FRAMES_REACTIVE_TO_PASSIVE, counter);
 				}else
 					mode = PASSIVE;
+				break;
 			case PASSIVE2ACTIVE:
 				if(counter < FRAMES_PASSIVE_TO_ACTIVE){
 					color.r = getMixedColorValue(colorPassiveState.r, colorActiveState.r, FRAMES_PASSIVE_TO_ACTIVE, counter);
@@ -88,6 +90,7 @@ public class SkeletonColor {
 					color.b = getMixedColorValue(colorPassiveState.b, colorActiveState.b, FRAMES_PASSIVE_TO_ACTIVE, counter);
 				}else
 					mode = ACTIVE;
+				break;
 			case ACTIVE2PASSIVE:
 				if(counter < FRAMES_ACTIVE_TO_PASSIV){
 					color.r = getMixedColorValue(colorPassiveState.r, colorActiveState.r, FRAMES_ACTIVE_TO_PASSIV, counter);
@@ -95,6 +98,7 @@ public class SkeletonColor {
 					color.b = getMixedColorValue(colorPassiveState.b, colorActiveState.b, FRAMES_ACTIVE_TO_PASSIV, counter);
 				}else
 					mode = PASSIVE;
+				break;
 			}
 		}
 		

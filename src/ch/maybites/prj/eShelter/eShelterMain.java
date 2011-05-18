@@ -62,7 +62,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 800; // amount of boids to start the program with
+	int initBoidNum = 100; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	SkeletonTracker skelton;
 	GestureScanner scanner;
@@ -71,17 +71,19 @@ public class eShelterMain extends PApplet implements OSCListener {
 	Rectangle monitor = new Rectangle();
 	
 	public void setup() {
-		//size(3840, 1024, OPENGL);
-		//frame.setLocation(3840,0);
+		size(1200, 600, OPENGL);
+		
+		/**
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		  GraphicsDevice[] gs = ge.getScreenDevices();
+		GraphicsDevice[] gs = ge.getScreenDevices();
 		  // gs[1] gets the *second* screen. gs[0] would get the primary screen
-		  GraphicsDevice gd = gs[1];
-		  GraphicsConfiguration[] gc = gd.getConfigurations();
-		  monitor = gc[0].getBounds();
-		  println(monitor.x + " " + monitor.y + " " + monitor.width + " " + monitor.height);
-		  size(monitor.width, monitor.height, OPENGL);
+		GraphicsDevice gd = gs[1];
+		GraphicsConfiguration[] gc = gd.getConfigurations();
+		monitor = gc[0].getBounds();
+		println(monitor.x + " " + monitor.y + " " + monitor.width + " " + monitor.height);
+		size(monitor.width, monitor.height, OPENGL);
 		//frame.setLocation(monitor.x, monitor.y);
+		**/  
 		  
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
@@ -329,7 +331,8 @@ public class eShelterMain extends PApplet implements OSCListener {
 	}
 	
 	static public void main(String args[]) {
-		PApplet.main( new String[] { "--present", "ch.maybites.prj.eShelter.eShelterMain" } );
+		PApplet.main( new String[] { "ch.maybites.prj.eShelter.eShelterMain" } );
+		//PApplet.main( new String[] { "--present", "ch.maybites.prj.eShelter.eShelterMain" } );
 	}
 
 	public void destroy() {

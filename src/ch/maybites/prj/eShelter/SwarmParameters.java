@@ -180,10 +180,12 @@ public class SwarmParameters {
 	public void setAppearance(
 			int swarmID,
 			float _sc, 
-			Color _color){
+			Color _color, 
+			int _incubationSize){
 		if(swarmID >= 0 && swarmID < size){
 			sc[swarmID] = random.create(_sc, _sc);
 			color[swarmID] = _color;
+			incubationSize[swarmID] = _incubationSize;
 		}
 	}
 	

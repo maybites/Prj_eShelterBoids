@@ -44,6 +44,8 @@ import java.util.*;
 
 import javax.media.opengl.GL;
 
+import mathematik.Vector3f;
+
 import ch.maybites.prj.eShelter.magnet.*;
 import ch.maybites.tools.MayRandom;
 import processing.core.*;
@@ -65,6 +67,7 @@ public class BoidsSim implements OSCListener{
 
 	public SwarmParameters swarmProps;
 	int[] swarmIDCounter;
+	private LetterBox letterBox;
 	
 	float h; // for color
 	
@@ -117,6 +120,10 @@ public class BoidsSim implements OSCListener{
 		messageQueue = new MessageQueue();
 		h = ih;
 		setupRenderer();
+		
+		letterBox = new LetterBox();
+		letterBox.setLineVertices(new Vector3f(0, 0, 0), new Vector3f(50, 50, 20), 2);
+		//letterBox.show();
 		
 		boids = new ArrayList<Boid>();
 		for (int i = 0; i < maxSize; i++){
@@ -454,6 +461,21 @@ public class BoidsSim implements OSCListener{
 				_repulseDamper,
 				_repulseRadius);
 	}
+	
+	public void changeSwarmAppearance(
+			int swarmID,
+			float _sc, 
+			float _colorR,
+			float _colorG,
+			float _colorB,
+			int _incubationSize){
+		swarmProps.setAppearance(swarmID, _sc, new Color(_colorR, _colorG, _colorB), _incubationSize);
+		for (Boid tempBoid: boids){
+			if(tempBoid.swarmID == swarmID){
+				tempBoid.applySwarmCharcteristics();
+			}
+		}
+	}
 
 	private void killRandomBoids(int _couter){
 		if(_couter > maxSize - maxSize/10){
@@ -501,6 +523,8 @@ public class BoidsSim implements OSCListener{
 				checkBounds(tempBoid);
 				tempBoid.applyTranslation();
 				tempBoid.calcReset();
+			}else{
+				tempBoid.kill();
 			}
 		}
 		killRandomBoids(counter);
@@ -576,6 +600,14 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[5])).floatValue(),
 							((Float)(_message.getArguments()[6])).floatValue(),
 							((Float)(_message.getArguments()[7])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/appearance"))
+					changeSwarmAppearance(
+							((Integer)(_message.getArguments()[0])).intValue(),
+							((Float)(_message.getArguments()[1])).floatValue(),
+							((Float)(_message.getArguments()[2])).floatValue(),
+							((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Integer)(_message.getArguments()[5])).intValue());
 				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
 					addBoid(
 							((Integer)(_message.getArguments()[0])).intValue(),
@@ -642,6 +674,21 @@ public class BoidsSim implements OSCListener{
 							((Float)(_message.getArguments()[6])).floatValue(),
 							((Float)(_message.getArguments()[7])).floatValue(),
 							((Float)(_message.getArguments()[8])).floatValue());
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/switch")){
+					if((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false)
+						letterBox.show();
+					else
+						letterBox.noShow();
+				}
+				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/set"))
+					letterBox.setLineVertices(
+							new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
+							((Float)(_message.getArguments()[1])).floatValue(),
+							((Float)(_message.getArguments()[2])).floatValue()),
+							new Vector3f(((Float)(_message.getArguments()[3])).floatValue(),
+							((Float)(_message.getArguments()[4])).floatValue(),
+							((Float)(_message.getArguments()[5])).floatValue()),
+							((Integer)(_message.getArguments()[6])).intValue());
 			}catch (ArrayIndexOutOfBoundsException e){
 				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
 			}catch (ClassCastException e){
@@ -656,9 +703,12 @@ public class BoidsSim implements OSCListener{
 	 * after instantiation is done.
 	 */
 	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/letterbox/switch", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/letterbox/set", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/warp", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/randomize/all", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/remove/all", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/appearance", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/physics/reset", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/showoutlines", this);
