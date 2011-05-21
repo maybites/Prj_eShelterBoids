@@ -70,7 +70,7 @@ public class GestureScanner implements OSCListener{
 	int mode = MODE_WAITING;
 	
 	float incubeGestureFactor = 2.5f;
-	float callingGestureFactor = 5.0f;
+	float callingGestureFactor = 4.0f;
 
 
 	Vector3f yAxis = new Vector3f(0, 1, 0);

@@ -63,6 +63,7 @@ public class SkeletonTracker implements OSCListener{
 	private boolean showOutlines = false;
 	
 	private AbstractBin myRenderer;
+	boolean skeletonActive = true;
 
 	MayRandom random = new MayRandom();
 
@@ -131,11 +132,13 @@ public class SkeletonTracker implements OSCListener{
 	}
  	
 	public boolean currentIsActive(){
-		for(int i = 0; i < skeletons.length; i++){
-			if(skeletons[i].isActive()){
-				currentID = i;
-				skeletons[i].testForActivity();
-				return true;
+		if(skeletonActive){
+			for(int i = 0; i < skeletons.length; i++){
+				if(skeletons[i].isActive()){
+					currentID = i;
+					skeletons[i].testForActivity();
+					return true;
+				}
 			}
 		}
 		setRandomSwarmID();
@@ -249,6 +252,9 @@ public class SkeletonTracker implements OSCListener{
 							skel.parseSkeletonData(_message);
 						}
 					}
+					else if(_message.getAddress().equals("/skeleton/active")){
+						skeletonActive = (((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false;
+					}
 					else if(_message.getAddress().equals("/skeleton/refscale"))
 						refscale(	new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
 								((Float)(_message.getArguments()[1])).floatValue(),
@@ -280,6 +286,7 @@ public class SkeletonTracker implements OSCListener{
 	 * after instantiation is done.
 	 */
 	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/skeleton/active", this);
 		CommunicationHub.getInstance().addListener("/skeleton/data", this);
 		CommunicationHub.getInstance().addListener("/skeleton/refscale", this);
 		CommunicationHub.getInstance().addListener("/skeleton/relposition", this);

@@ -68,6 +68,7 @@ public class BoidsSim implements OSCListener{
 	public SwarmParameters swarmProps;
 	int[] swarmIDCounter;
 	private LetterBox letterBox;
+	boolean warpActive = false;
 	
 	float h; // for color
 	
@@ -84,6 +85,7 @@ public class BoidsSim implements OSCListener{
 
 	private AbstractBin myRenderer;
 	private Cube myInnerModel;
+	SingleBoid singleB;
 
 	MayRandom random = new MayRandom();
 
@@ -122,7 +124,7 @@ public class BoidsSim implements OSCListener{
 		setupRenderer();
 		
 		letterBox = new LetterBox();
-		letterBox.setLineVertices(new Vector3f(0, 0, 0), new Vector3f(50, 50, 20), 2);
+		letterBox.setLineVertices(new Vector3f(-80f, 0, 301), new Vector3f(154, 37, 0), 15);
 		//letterBox.show();
 		
 		boids = new ArrayList<Boid>();
@@ -131,14 +133,14 @@ public class BoidsSim implements OSCListener{
 			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), randomType);
 			newBoid.setShader(new ShaderMaterial(), myReflectionTexture);
 			//if(i > maxSize/2)
-			//	newBoid.kill();
+			newBoid.kill();
 			boids.add(newBoid);
 		}
 				
 		simID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
 		otherSimID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.OTHERSIM_ID, 1);
 	
-		this.addMagnetCylinder("ceo", 1, 0, 0, 0, 2, 300, 500, 2f);
+		//this.addMagnetCylinder("ceo", 1, 0, 0, 0, 2, 300, 500, 2f);
 		setSystemEnergyFields(100, .4f, 100, .5f, 100, -1f, 100, 1f);
 	}
 
@@ -216,7 +218,7 @@ public class BoidsSim implements OSCListener{
         Canvas.getInstance().getPlugin().bin(Gestalt.BIN_FRAME_SETUP).add(_myShaderManager);
 
         myReflectionTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
-        myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/sky-reflection.png")));
+        myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/e-shelter3D.png")));
         myReflectionTexture.setTextureUnit(GL.GL_TEXTURE0);
 
 		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
@@ -260,7 +262,18 @@ public class BoidsSim implements OSCListener{
 		}
 		return null;
 	}
-
+	
+	Boid addBoid(int _type, PVector _pos, PVector _vel, int count) {
+		for(Boid b:boids){
+			if(!b.isAlive && count >0){
+				count--;
+				b.set(_pos, _vel, _type);
+				return b;
+			}
+		}
+		return null;
+	}
+	
 	void removeAllBoids(){
 		for(Boid b:boids){
 			b.kill();
@@ -421,12 +434,17 @@ public class BoidsSim implements OSCListener{
 			//boid.pos.y = borderTop;
 		}
 		if (boid.pos.z < borderBack){
-			boid.pos.z = borderFront;
-			//sendWarpOSCMessage(boid);
-			//boid.delete();
+			if(boid.vel.z < 0)
+				boid.vel.z *= -2.;
+			//boid.pos.z = borderBack;
 		}
 		if (boid.pos.z > borderFront){
+			if(warpActive){
+				sendWarpOSCMessage(boid);
+				removeBoid(boid);
+			}
 			boid.pos.z = borderBack;
+			boid.vel.z = 0;
 		}
 	}
 	
@@ -497,6 +515,26 @@ public class BoidsSim implements OSCListener{
 		}
 	}
 	
+	private void showSingleE(boolean flag){
+		if(flag){
+			Debugger.getInstance().warningMessage(this.getClass(), "Show Single E");
+			singleB = new SingleBoid(new PVector(-200, 0, 300), new PVector(1, 0, 0), 5);
+			singleB.setShader(new ShaderMaterial(), myReflectionTexture);
+		}else if(singleB != null){
+			Debugger.getInstance().warningMessage(this.getClass(), "no Single E");
+			singleB.kill();
+		}
+			
+	}
+	
+	private void singleEPos(float _posX, float _posY, float _posZ){
+		if(singleB != null){
+			singleB.pos.set(_posX, _posY, _posZ);
+			singleB.applyTranslation();
+			singleB.applySwarmCharcteristics();
+		}
+	}
+
 	void run(boolean aW) {
 		// iterate through the list of boids
 		for (Boid tempBoid: boids)		// iterate through the all of the boids
@@ -575,124 +613,140 @@ public class BoidsSim implements OSCListener{
 		OSCMessage _message;
 		while(messageQueue.hasMoreMessages()){
 			_message = messageQueue.removeNextMessage();
-			try{
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics/reset"))
-					resetSwarmPhysics();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/all"))
-					removeAllMagnets();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/randomize/all"))
-					typeRandomizeAllBoids();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
-					removeAllBoids();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm")){
-//					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
-//							((Integer)(_message.getArguments()[1])).intValue());
+			if(_message != null){
+				try{
+					if(_message.getAddress().equals("/simulation"+simID+"/cheers/pos"))
+						singleEPos(
+								((Float)(_message.getArguments()[0])).floatValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/cheers")){
+						showSingleE((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false);
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics/reset"))
+						resetSwarmPhysics();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/all"))
+						removeAllMagnets();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/randomize/all"))
+						typeRandomizeAllBoids();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
+						removeAllBoids();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm")){
+						addBoid(((Integer)(_message.getArguments()[0])).intValue(),
+							 new PVector(0, 0, 0), new PVector(1, 1, 1),
+								((Integer)(_message.getArguments()[1])).intValue());
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
+						showOutlines(((Integer)(_message.getArguments()[0])).intValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))
+						changeSwarmPhysics(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/appearance"))
+						changeSwarmAppearance(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
+						addBoid(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp")){
+						addBoid(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue() * -1,
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue() - this.warpThickness - 20, //sets the new boid clear within the simbox
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue()* -1);
+						//Debugger.getInstance().warningMessage(this.getClass(), "Warp Received");
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
+						removeMagnet((String)(_message.getArguments()[0]));
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
+						addEnergyField(
+								(String)(_message.getArguments()[0]),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue(),
+								((Float)(_message.getArguments()[9])).floatValue(),
+								((Float)(_message.getArguments()[10])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/system"))
+						setSystemEnergyFields(
+								((Float)(_message.getArguments()[0])).floatValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
+						addMagnetCylinder(
+								((String)(_message.getArguments()[0])),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/sphere"))
+						addMagnetSphere(
+								((String)(_message.getArguments()[0])),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/switch")){
+						if((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false)
+							letterBox.show();
+						else
+							letterBox.noShow();
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/warp")){
+						warpActive = (((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false;
+						Debugger.getInstance().warningMessage(this.getClass(), "Warp Active: "+ warpActive);
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/set"))
+						letterBox.setLineVertices(
+								new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue()),
+								new Vector3f(((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue()),
+								((Integer)(_message.getArguments()[6])).intValue());
+				}catch (ArrayIndexOutOfBoundsException e){
+					Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
+				}catch (ClassCastException e){
+					Debugger.getInstance().warningMessage(this.getClass(), "OSC Message Data in wrong format: "+ _message.getAddress() + " -> " + e.getMessage());
 				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
-					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))
-					changeSwarmPhysics(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/appearance"))
-					changeSwarmAppearance(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
-					addBoid(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp")){
-					addBoid(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue() * -1,
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue() - this.warpThickness - 20, //sets the new boid clear within the simbox
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue()* -1);
-				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
-					removeMagnet((String)(_message.getArguments()[0]));
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
-					addEnergyField(
-							(String)(_message.getArguments()[0]),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue(),
-							((Float)(_message.getArguments()[9])).floatValue(),
-							((Float)(_message.getArguments()[10])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/system"))
-					setSystemEnergyFields(
-							((Float)(_message.getArguments()[0])).floatValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
-					addMagnetCylinder(
-							((String)(_message.getArguments()[0])),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/sphere"))
-					addMagnetSphere(
-							((String)(_message.getArguments()[0])),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/switch")){
-					if((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false)
-						letterBox.show();
-					else
-						letterBox.noShow();
-				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/set"))
-					letterBox.setLineVertices(
-							new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue()),
-							new Vector3f(((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue()),
-							((Integer)(_message.getArguments()[6])).intValue());
-			}catch (ArrayIndexOutOfBoundsException e){
-				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
-			}catch (ClassCastException e){
-				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message Data in wrong format: "+ _message.getAddress() + " -> " + e.getMessage());
 			}
 		}
 				
@@ -703,6 +757,9 @@ public class BoidsSim implements OSCListener{
 	 * after instantiation is done.
 	 */
 	public void addToOSCListener(){
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/cheers/pos", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/cheers", this);
+		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/warp", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/letterbox/switch", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/letterbox/set", this);
 		CommunicationHub.getInstance().addListener("/simulation"+simID+"/manager/boid/warp", this);

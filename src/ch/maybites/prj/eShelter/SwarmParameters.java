@@ -124,8 +124,8 @@ public class SwarmParameters {
 		repulseRadiusSqr[4] = repulseRadius[4] * repulseRadius[4];
 
 		//ceo
-		color[5] = new Color(0.341f, 0.137f, 0.915f); //blau
-		sc[5] = 30;
+		color[5] = new Color(1f, 1f, 1f); //blau
+		sc[5] = 80;
 		incubationSize[5] = 1;
 		neighborhoodRadius[5] = 150;
 		maxSpeed[5] = 4f;
