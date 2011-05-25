@@ -1,0 +1,231 @@
+{
+	"pattrstorage" : 	{
+		"name" : "storage[1]",
+		"slots" : 		{
+			"1" : 			{
+				"id" : 1,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 0.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ -2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ 1596.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ 3602.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -235.0 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+,
+			"2" : 			{
+				"id" : 2,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 0.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ -2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ 1596.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ 2295.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -206.0 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+,
+			"3" : 			{
+				"id" : 3,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 0.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ -2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ 1596.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ 825.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -299.0 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+,
+			"4" : 			{
+				"id" : 4,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ -1.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ 2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ -1360.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ -821.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -277.0 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+,
+			"5" : 			{
+				"id" : 5,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 0.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ 2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ -1360.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ -2049.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -138.0 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+,
+			"6" : 			{
+				"id" : 6,
+				"data" : 				{
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 0.0 ],
+					"letterPath1::posX" : [ 137.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 247.0 ],
+					"letterPath1::sizeX" : [ 0.0 ],
+					"letterPath1::sizeY" : [ 0.0 ],
+					"letterPath1::sizeZ" : [ 0.0 ],
+					"letterPath1::swarmID" : [ 18 ],
+					"letterPath2::dirX" : [ 2.0 ],
+					"letterPath2::dirY" : [ 0.0 ],
+					"letterPath2::dirZ" : [ 0.0 ],
+					"letterPath2::posX" : [ -1360.0 ],
+					"letterPath2::posY" : [ 0.0 ],
+					"letterPath2::posZ" : [ -143.0 ],
+					"letterPath2::sizeX" : [ 3900.0 ],
+					"letterPath2::sizeY" : [ 150.0 ],
+					"letterPath2::sizeZ" : [ 71.0 ],
+					"letterPath2::swarmID" : [ 10 ],
+					"letterPath3::dirX" : [ 0.0 ],
+					"letterPath3::dirY" : [ 0.0 ],
+					"letterPath3::dirZ" : [ 2.0 ],
+					"letterPath3::posX" : [ -3407.0 ],
+					"letterPath3::posY" : [ 0.0 ],
+					"letterPath3::posZ" : [ -9.7 ],
+					"letterPath3::sizeX" : [ 152.0 ],
+					"letterPath3::sizeY" : [ 200.0 ],
+					"letterPath3::sizeZ" : [ 430.0 ],
+					"letterPath3::swarmID" : [ 10 ]
+				}
+
+			}
+
+		}
+
+	}
+
+}

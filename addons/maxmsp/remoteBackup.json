@@ -1,0 +1,34 @@
+{
+	"pattrstorage" : 	{
+		"name" : "storage[1]",
+		"slots" : 		{
+			"1" : 			{
+				"id" : 1,
+				"data" : 				{
+					"cylindricalMagnet::attractionType" : [ 2 ],
+					"cylindricalMagnet::innerRadius" : [ 418.0 ],
+					"cylindricalMagnet::maxAttractionForce" : [ 4.0 ],
+					"cylindricalMagnet::outerRadius" : [ 2136.0 ],
+					"cylindricalMagnet::posX" : [ -1002.0 ],
+					"cylindricalMagnet::posY" : [ 0.0 ],
+					"cylindricalMagnet::posZ" : [ -150.0 ],
+					"cylindricalMagnet::swarmID" : [ 10 ],
+					"letterPath1::dirX" : [ 0.0 ],
+					"letterPath1::dirY" : [ 0.0 ],
+					"letterPath1::dirZ" : [ 3.0 ],
+					"letterPath1::posX" : [ 300.0 ],
+					"letterPath1::posY" : [ 0.0 ],
+					"letterPath1::posZ" : [ 0.0 ],
+					"letterPath1::sizeX" : [ 422.0 ],
+					"letterPath1::sizeY" : [ 1000.0 ],
+					"letterPath1::sizeZ" : [ 710.0 ],
+					"letterPath1::swarmID" : [ 10 ]
+				}
+
+			}
+
+		}
+
+	}
+
+}
