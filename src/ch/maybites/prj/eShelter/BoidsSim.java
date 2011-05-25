@@ -89,13 +89,13 @@ public class BoidsSim implements OSCListener{
 
 	int borderLeft, borderRight, borderTop, borderBottom, borderFront, borderBack;
 
-	float warpThickness = 100;
+	float warpThickness = 20;
 	float warpStrength = .4f;
-	float backReflThickness = 100;
+	float backReflThickness = 20;
 	float backReflStrength = .5f;
-	float topReflThickness = 100;
+	float topReflThickness = 20;
 	float topReflStrength = -1f;
-	float bottomReflThickness = 100;
+	float bottomReflThickness = 20;
 	float bottomReflStrength = 1f;
 
 	BoidsSim(int _width, int _height, int n, float ih) {
@@ -130,8 +130,7 @@ public class BoidsSim implements OSCListener{
 			int randomType = swarmProps.getRandomSwarmID();
 			Boid newBoid = new Boid(new PVector(0, 0, 0), new PVector(random.create(-1, 1), random.create(-1, 1), random.create(-1, 1)), randomType);
 			newBoid.setShader(new ShaderMaterial(), myReflectionTexture);
-			//if(i > maxSize/2)
-			//	newBoid.kill();
+			newBoid.kill();
 			boids.add(newBoid);
 		}
 				
@@ -216,7 +215,7 @@ public class BoidsSim implements OSCListener{
         Canvas.getInstance().getPlugin().bin(Gestalt.BIN_FRAME_SETUP).add(_myShaderManager);
 
         myReflectionTexture = Canvas.getInstance().getPlugin().drawablefactory().texture();
-        myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/sky-reflection.png")));
+        myReflectionTexture.load(Bitmaps.getBitmap(GlobalPreferences.getInstance().getAbsDataPath("shader/images/e-shelter3D.png")));
         myReflectionTexture.setTextureUnit(GL.GL_TEXTURE0);
 
 		myInnerModel = Canvas.getInstance().getPlugin().drawablefactory().cube();
@@ -254,6 +253,7 @@ public class BoidsSim implements OSCListener{
 	Boid addBoid(int _type, PVector _pos, PVector _vel) {
 		for(Boid b:boids){
 			if(!b.isAlive){
+				Debugger.getInstance().infoMessage(this.getClass(),"added boid");
 				b.set(_pos, _vel, _type);
 				return b;
 			}
@@ -568,6 +568,9 @@ public class BoidsSim implements OSCListener{
 	 *		(float)_topReflThickness (float)_topReflStrength (float)_bottomReflThickness (float)_bottomReflStrength
 	 */
 	
+	/*
+	 * todu..
+	 */
 	/**
 	 *  /simulation/manager/boid/params <(float)neighborhoodRadius> <(float)maxSpeed> <(float)<maxSteerForce> 
 	 */
@@ -575,124 +578,130 @@ public class BoidsSim implements OSCListener{
 		OSCMessage _message;
 		while(messageQueue.hasMoreMessages()){
 			_message = messageQueue.removeNextMessage();
-			try{
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics/reset"))
-					resetSwarmPhysics();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/all"))
-					removeAllMagnets();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/randomize/all"))
-					typeRandomizeAllBoids();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
-					removeAllBoids();
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm")){
-//					addBoids(((Integer)(_message.getArguments()[0])).intValue(),
-//							((Integer)(_message.getArguments()[1])).intValue());
+			if(_message != null){
+				try{
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/revive/all")){
+						//reviveAllBoids();
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics/reset"))
+						resetSwarmPhysics();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/all"))
+						removeAllMagnets();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/randomize/all"))
+						typeRandomizeAllBoids();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/remove/all"))
+						removeAllBoids();
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/addswarm")){
+//						addBoids(((Integer)(_message.getArguments()[0])).intValue(),
+//								((Integer)(_message.getArguments()[1])).intValue());
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
+						showOutlines(((Integer)(_message.getArguments()[0])).intValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))
+						changeSwarmPhysics(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/appearance"))
+						changeSwarmAppearance(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
+						addBoid(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp")){
+						addBoid(
+								((Integer)(_message.getArguments()[0])).intValue(),
+								((Float)(_message.getArguments()[1])).floatValue() * -1,
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue() - this.warpThickness - 20, //sets the new boid clear within the simbox
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue()* -1);
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
+						removeMagnet((String)(_message.getArguments()[0]));
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
+						addEnergyField(
+								(String)(_message.getArguments()[0]),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue(),
+								((Float)(_message.getArguments()[9])).floatValue(),
+								((Float)(_message.getArguments()[10])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/system"))
+						setSystemEnergyFields(
+								((Float)(_message.getArguments()[0])).floatValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
+						addMagnetCylinder(
+								((String)(_message.getArguments()[0])),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/sphere"))
+						addMagnetSphere(
+								((String)(_message.getArguments()[0])),
+								((Integer)(_message.getArguments()[1])).intValue(),
+								((Float)(_message.getArguments()[2])).floatValue(),
+								((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Integer)(_message.getArguments()[5])).intValue(),
+								((Float)(_message.getArguments()[6])).floatValue(),
+								((Float)(_message.getArguments()[7])).floatValue(),
+								((Float)(_message.getArguments()[8])).floatValue());
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/switch")){
+						if((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false)
+							letterBox.show();
+						else
+							letterBox.noShow();
+					}
+					if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/set"))
+						letterBox.setLineVertices(
+								new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
+								((Float)(_message.getArguments()[1])).floatValue(),
+								((Float)(_message.getArguments()[2])).floatValue()),
+								new Vector3f(((Float)(_message.getArguments()[3])).floatValue(),
+								((Float)(_message.getArguments()[4])).floatValue(),
+								((Float)(_message.getArguments()[5])).floatValue()),
+								((Integer)(_message.getArguments()[6])).intValue());
+				}catch (ArrayIndexOutOfBoundsException e){
+					Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
+				}catch (ClassCastException e){
+					Debugger.getInstance().warningMessage(this.getClass(), "OSC Message Data in wrong format: "+ _message.getAddress() + " -> " + e.getMessage());
 				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/showoutlines"))
-					showOutlines(((Integer)(_message.getArguments()[0])).intValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/physics"))
-					changeSwarmPhysics(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/appearance"))
-					changeSwarmAppearance(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/add"))
-					addBoid(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/boid/warp")){
-					addBoid(
-							((Integer)(_message.getArguments()[0])).intValue(),
-							((Float)(_message.getArguments()[1])).floatValue() * -1,
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue() - this.warpThickness - 20, //sets the new boid clear within the simbox
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue()* -1);
-				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/remove/name"))
-					removeMagnet((String)(_message.getArguments()[0]));
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/energyfield"))
-					addEnergyField(
-							(String)(_message.getArguments()[0]),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue(),
-							((Float)(_message.getArguments()[9])).floatValue(),
-							((Float)(_message.getArguments()[10])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/system"))
-					setSystemEnergyFields(
-							((Float)(_message.getArguments()[0])).floatValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/cylinder"))
-					addMagnetCylinder(
-							((String)(_message.getArguments()[0])),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/magnet/add/sphere"))
-					addMagnetSphere(
-							((String)(_message.getArguments()[0])),
-							((Integer)(_message.getArguments()[1])).intValue(),
-							((Float)(_message.getArguments()[2])).floatValue(),
-							((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Integer)(_message.getArguments()[5])).intValue(),
-							((Float)(_message.getArguments()[6])).floatValue(),
-							((Float)(_message.getArguments()[7])).floatValue(),
-							((Float)(_message.getArguments()[8])).floatValue());
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/switch")){
-					if((((Integer)(_message.getArguments()[0])).intValue() == 1)? true: false)
-						letterBox.show();
-					else
-						letterBox.noShow();
-				}
-				if(_message.getAddress().equals("/simulation"+simID+"/manager/letterbox/set"))
-					letterBox.setLineVertices(
-							new Vector3f(((Float)(_message.getArguments()[0])).floatValue(),
-							((Float)(_message.getArguments()[1])).floatValue(),
-							((Float)(_message.getArguments()[2])).floatValue()),
-							new Vector3f(((Float)(_message.getArguments()[3])).floatValue(),
-							((Float)(_message.getArguments()[4])).floatValue(),
-							((Float)(_message.getArguments()[5])).floatValue()),
-							((Integer)(_message.getArguments()[6])).intValue());
-			}catch (ArrayIndexOutOfBoundsException e){
-				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message in wrong format: "+ _message.getAddress());
-			}catch (ClassCastException e){
-				Debugger.getInstance().warningMessage(this.getClass(), "OSC Message Data in wrong format: "+ _message.getAddress() + " -> " + e.getMessage());
+				
 			}
 		}
 				

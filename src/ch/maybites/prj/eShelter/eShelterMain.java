@@ -38,14 +38,12 @@ import gestalt.Gestalt;
 import gestalt.p5.*;
 import gestalt.util.FPSCounter;
 import mathematik.*;
-import fullscreen.*; 
 
 import com.illposed.osc.OSCListener;
 import com.illposed.osc.OSCMessage;
 
 public class eShelterMain extends PApplet implements OSCListener {
 	private static final long serialVersionUID = 1L;
-	FullScreen fs;
 	// ConfigGUI myGUI;
 	// Connector myConnector;
 	// Dispatcher myDispatcher;
@@ -62,7 +60,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 100; // amount of boids to start the program with
+	int initBoidNum = 200; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	SkeletonTracker skelton;
 	GestureScanner scanner;
@@ -71,19 +69,8 @@ public class eShelterMain extends PApplet implements OSCListener {
 	Rectangle monitor = new Rectangle();
 	
 	public void setup() {
-		size(1200, 600, OPENGL);
-		
-		/**
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice[] gs = ge.getScreenDevices();
-		  // gs[1] gets the *second* screen. gs[0] would get the primary screen
-		GraphicsDevice gd = gs[1];
-		GraphicsConfiguration[] gc = gd.getConfigurations();
-		monitor = gc[0].getBounds();
-		println(monitor.x + " " + monitor.y + " " + monitor.width + " " + monitor.height);
-		size(monitor.width, monitor.height, OPENGL);
-		//frame.setLocation(monitor.x, monitor.y);
-		**/  
+		size(1280, 1024, OPENGL);
+		frame.setLocation(1440, 0);
 		  
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
@@ -331,8 +318,8 @@ public class eShelterMain extends PApplet implements OSCListener {
 	}
 	
 	static public void main(String args[]) {
-		PApplet.main( new String[] { "ch.maybites.prj.eShelter.eShelterMain" } );
-		//PApplet.main( new String[] { "--present", "ch.maybites.prj.eShelter.eShelterMain" } );
+		//PApplet.main( new String[] { "ch.maybites.prj.eShelter.eShelterMain" } );
+		PApplet.main( new String[] { "--present", "ch.maybites.prj.eShelter.eShelterMain" } );
 	}
 
 	public void destroy() {
