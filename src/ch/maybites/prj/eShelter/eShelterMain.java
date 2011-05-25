@@ -60,7 +60,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 
 	float angleX, angleY, transX, transY, transZ;
 
-	int initBoidNum = 200; // amount of boids to start the program with
+	int initBoidNum = 800; // amount of boids to start the program with
 	BoidsSim flock1;// ,flock2,flock3;
 	SkeletonTracker skelton;
 	GestureScanner scanner;
@@ -71,11 +71,23 @@ public class eShelterMain extends PApplet implements OSCListener {
 	public void setup() {
 		size(1280, 1024, OPENGL);
 		frame.setLocation(1440, 0);
-		  
+		
+		/**
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice[] gs = ge.getScreenDevices();
+		  // gs[1] gets the *second* screen. gs[0] would get the primary screen
+		GraphicsDevice gd = gs[1];
+		GraphicsConfiguration[] gc = gd.getConfigurations();
+		monitor = gc[0].getBounds();
+		println(monitor.x + " " + monitor.y + " " + monitor.width + " " + monitor.height);
+		size(monitor.width, monitor.height, OPENGL);
+		//frame.setLocation(monitor.x, monitor.y);
+		 */
+		
 		Debugger.getInstance();
 		Debugger.setLevelToInfo();
 
-		System.out.println("gotscha");
+		System.out.println("Version_001");
 
 		GlobalPreferences.getInstance().setDataPath(this.dataPath(""));
 		oscID = GlobalPreferences.getInstance().getIntProperty(GlobalPreferences.SIM_ID, 1);
@@ -93,9 +105,9 @@ public class eShelterMain extends PApplet implements OSCListener {
 		Canvas.setup(this);
 		gestalt = Canvas.getInstance().getPlugin();
 		gestalt.camera().setMode(Gestalt.CAMERA_MODE_LOOK_AT);
-		gestalt.camera().position().set(0f, -160f, 940f);
+		gestalt.camera().position().set(0f, -50, 913);
 		gestalt.camera().lookat().set(0f, -41f, 0f);
-		gestalt.camera().fovy = 91.0f;
+		gestalt.camera().fovy = 118.0f;
 		println("fovy: " + gestalt.camera().fovy);
 
 		/* setup light */
@@ -106,7 +118,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 		// DisplayCapabilities.listDisplayDevices();
 
 		// create and fill the list of boids
-		flock1 = new BoidsSim(width, height, initBoidNum, 255);
+		flock1 = new BoidsSim(3840, 800, initBoidNum, 255);
 		flock1.addToOSCListener();
 
 		//create skeleton
@@ -244,7 +256,7 @@ public class eShelterMain extends PApplet implements OSCListener {
 	private void setCameraLookAt(float posx, float posy, float posz){
 		gestalt.camera().lookat().set(posx, posy, posz);
 	}
-
+	
 	public void acceptMessage(java.util.Date time, OSCMessage _message) {
 		try {
 			if (_message.getAddress().equals("/simulation"+oscID+"/light/intensity"))
